@@ -16,7 +16,7 @@ public class ReaderaiApplication {
 
     private static void setEnv() {
         Dotenv dotenv = Dotenv.load();
-        System.setProperty("SUPABASE_JWT_SECRET", dotenv.get("SUPABASE_JWT_SECRET"));
+        System.setProperty("SUPABASE_URL", dotenv.get("SUPABASE_URL"));
         System.setProperty("MINIO_ENDPOINT", dotenv.get("MINIO_ENDPOINT"));
         System.setProperty("MINIO_ACCESS_KEY", dotenv.get("MINIO_ACCESS_KEY"));
         System.setProperty("MINIO_SECRET_KEY", dotenv.get("MINIO_SECRET_KEY"));
