@@ -1,0 +1,89 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-sequence-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - createSequence:
+            sequenceName: READING_SPEED_ATTEMPT_SEQ_ID
+      rollback:
+        - dropSequence:
+            sequenceName: READING_SPEED_ATTEMPT_SEQ_ID
+  - changeSet:
+      id: create-table-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - createTable:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: ID
+                  type: BIGINT
+                  defaultValueSequenceNext: READING_SPEED_ATTEMPT_SEQ_ID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: PARTICIPANT_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_READING_SPEED_ATTEMPT_PARTICIPANT
+                    references: PARTICIPANT(ID)
+                    nullable: false
+              - column:
+                  name: TEXT_ID
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: TOTAL_WORDS
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CORRECT_COUNT
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ERROR_COUNT
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SKIPPED_COUNT
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: NOT_IN_VOCABULARY_COUNT
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DURATION_SECONDS
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: WPM
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ACCURACY
+                  type: DOUBLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: WORDS_JSON
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+              - column:
+                  name: UPDATED_AT
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: READING_SPEED_ATTEMPT

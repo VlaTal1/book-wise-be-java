@@ -17,3 +17,5 @@ databaseChangeLog:
       file: db/changelog/changeset/create-table-answer.yaml
   - include:
       file: db/changelog/changeset/GT-35-update-table-answer-add-selected-field.yaml
+  - include:
+      file: db/changelog/changeset/create-table-reading-speed-attempt.yaml

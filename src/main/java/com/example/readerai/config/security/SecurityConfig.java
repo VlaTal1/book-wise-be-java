@@ -24,6 +24,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**").permitAll()
+                        // Service-to-service від Python (guided-decoding сервіс) — захищено
+                        // окремим API-ключем у контролері, не Supabase JWT.
+                        .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(supabaseUrl), UsernamePasswordAuthenticationFilter.class);
