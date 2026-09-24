@@ -39,6 +39,13 @@ public class ReadingSpeedAttemptConverter {
                 .wpm(entry.getWpm())
                 .accuracy(entry.getAccuracy())
                 .wordsJson(entry.getWordsJson())
+                .stressStatus(entry.getStressStatus())
+                .stressProgress(entry.getStressProgress())
+                .stressAccuracy(entry.getStressAccuracy())
+                .stressCheckedWords(entry.getStressCheckedWords())
+                .stressCorrectWords(entry.getStressCorrectWords())
+                .stressWordsJson(entry.getStressWordsJson())
+                .stressError(entry.getStressError())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

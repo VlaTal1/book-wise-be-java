@@ -2,6 +2,8 @@ package com.example.readerai.service;
 
 import com.example.readerai.converter.ReadingSpeedAttemptConverter;
 import com.example.readerai.dto.ReadingSpeedAttemptDTO;
+import com.example.readerai.dto.StressProgressUpdateDTO;
+import com.example.readerai.dto.StressResultUpdateDTO;
 import com.example.readerai.entity.Participant;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.exception.NotFoundException;
@@ -56,5 +58,42 @@ public class ReadingSpeedAttemptService {
         return readingSpeedAttemptRepository.findAllByParticipant_IdOrderByCreatedAtDesc(participantId).stream()
                 .map(readingSpeedAttemptConverter::toDTO)
                 .toList();
+    }
+
+    public ReadingSpeedAttemptDTO getById(Long id) {
+        ReadingSpeedAttempt attempt = readingSpeedAttemptRepository.findById(id).orElseThrow(
+                () -> new NotFoundException("Reading speed attempt not found")
+        );
+        if (!Objects.equals(attempt.getParticipant().getUserId(), userService.getUserId())) {
+            throw new PermissionDeniedException("User id mismatch");
+        }
+        return readingSpeedAttemptConverter.toDTO(attempt);
+    }
+
+    // Викликається лише Python-сервісом (/internal/**, API-ключ) під час
+    // обробки шару перевірки наголосу — проміжні оновлення прогресу, щоб
+    // мобілка могла показати прогрес-бар, поки триває forced alignment.
+    public void updateStressProgress(Long id, StressProgressUpdateDTO dto) {
+        ReadingSpeedAttempt attempt = readingSpeedAttemptRepository.findById(id).orElseThrow(
+                () -> new NotFoundException("Reading speed attempt not found")
+        );
+        attempt.setStressStatus(dto.getStatus());
+        attempt.setStressProgress(dto.getProgress());
+        readingSpeedAttemptRepository.save(attempt);
+    }
+
+    // Фінальний результат шару перевірки наголосу від Python.
+    public void updateStressResult(Long id, StressResultUpdateDTO dto) {
+        ReadingSpeedAttempt attempt = readingSpeedAttemptRepository.findById(id).orElseThrow(
+                () -> new NotFoundException("Reading speed attempt not found")
+        );
+        attempt.setStressStatus(dto.getStatus());
+        attempt.setStressProgress(100);
+        attempt.setStressAccuracy(dto.getAccuracy());
+        attempt.setStressCheckedWords(dto.getCheckedWords());
+        attempt.setStressCorrectWords(dto.getCorrectWords());
+        attempt.setStressWordsJson(dto.getWordsJson());
+        attempt.setStressError(dto.getError());
+        readingSpeedAttemptRepository.save(attempt);
     }
 }

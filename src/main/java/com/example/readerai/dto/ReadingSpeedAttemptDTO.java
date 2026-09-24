@@ -1,6 +1,8 @@
 package com.example.readerai.dto;
 
+import com.example.readerai.entity.StressStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,4 +40,19 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
     // Пословний результат як сирий JSON-масив (Python вже формує його готовим,
     // Java лише зберігає і повертає, не парсячи структуру).
     private String wordsJson;
+
+    @Builder.Default
+    private StressStatus stressStatus = StressStatus.PENDING;
+
+    private Integer stressProgress;
+
+    private Double stressAccuracy;
+
+    private Integer stressCheckedWords;
+
+    private Integer stressCorrectWords;
+
+    private String stressWordsJson;
+
+    private String stressError;
 }

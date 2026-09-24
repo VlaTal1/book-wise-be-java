@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-stress-check-columns-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: STRESS_STATUS
+                  type: VARCHAR(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STRESS_PROGRESS
+                  type: INTEGER
+              - column:
+                  name: STRESS_ACCURACY
+                  type: DOUBLE
+              - column:
+                  name: STRESS_CHECKED_WORDS
+                  type: INTEGER
+              - column:
+                  name: STRESS_CORRECT_WORDS
+                  type: INTEGER
+              - column:
+                  name: STRESS_WORDS_JSON
+                  type: TEXT
+              - column:
+                  name: STRESS_ERROR
+                  type: TEXT
+      rollback:
+        - dropColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: STRESS_STATUS
+              - column:
+                  name: STRESS_PROGRESS
+              - column:
+                  name: STRESS_ACCURACY
+              - column:
+                  name: STRESS_CHECKED_WORDS
+              - column:
+                  name: STRESS_CORRECT_WORDS
+              - column:
+                  name: STRESS_WORDS_JSON
+              - column:
+                  name: STRESS_ERROR

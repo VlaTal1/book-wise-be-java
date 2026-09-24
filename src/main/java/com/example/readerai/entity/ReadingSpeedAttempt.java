@@ -2,6 +2,7 @@ package com.example.readerai.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -62,4 +63,34 @@ public class ReadingSpeedAttempt extends Audit {
     // перегляду підсвітки; зберігається як є, без окремих сутностей на слово.
     @Column(name = "WORDS_JSON", nullable = false, columnDefinition = "TEXT")
     private String wordsJson;
+
+    // Окремий асинхронний шар перевірки наголосу (forced alignment + модель,
+    // Python-сервіс) — рахується ПІСЛЯ того, як цей attempt вже збережено
+    // (потрібен повний аудіофайл сесії), тому статус стартує з PENDING і
+    // оновлюється окремими internal-викликами (не через save()).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STRESS_STATUS", nullable = false, length = 20)
+    @Builder.Default
+    private StressStatus stressStatus = StressStatus.PENDING;
+
+    @Column(name = "STRESS_PROGRESS")
+    private Integer stressProgress;
+
+    @Column(name = "STRESS_ACCURACY")
+    private Double stressAccuracy;
+
+    @Column(name = "STRESS_CHECKED_WORDS")
+    private Integer stressCheckedWords;
+
+    @Column(name = "STRESS_CORRECT_WORDS")
+    private Integer stressCorrectWords;
+
+    // Пословний вердикт перевірки наголосу (index, word, checked, correct,
+    // predicted/reference склад) як JSON-масив — той самий підхід, що і
+    // wordsJson вище.
+    @Column(name = "STRESS_WORDS_JSON", columnDefinition = "TEXT")
+    private String stressWordsJson;
+
+    @Column(name = "STRESS_ERROR", columnDefinition = "TEXT")
+    private String stressError;
 }
