@@ -19,6 +19,11 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
 
     private Long participantId;
 
+    // Заповнюється лише конвертером у toDTO() (для списку історії в
+    // режимі батьків, де один список змішує кількох дітей) — Python його
+    // не надсилає і не читає, DTO лише читається на це поле.
+    private String participantName;
+
     private String textId;
 
     private Integer totalWords;
@@ -55,4 +60,8 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
     private String stressWordsJson;
 
     private String stressError;
+
+    private String audioFileName;
+
+    private String referenceWordsJson;
 }

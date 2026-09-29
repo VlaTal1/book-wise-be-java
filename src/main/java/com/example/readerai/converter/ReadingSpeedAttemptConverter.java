@@ -20,6 +20,8 @@ public class ReadingSpeedAttemptConverter {
                 .wpm(entry.getWpm())
                 .accuracy(entry.getAccuracy())
                 .wordsJson(entry.getWordsJson())
+                .audioFileName(entry.getAudioFileName())
+                .referenceWordsJson(entry.getReferenceWordsJson())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
@@ -29,6 +31,7 @@ public class ReadingSpeedAttemptConverter {
         return ReadingSpeedAttemptDTO.builder()
                 .id(entry.getId())
                 .participantId(entry.getParticipant().getId())
+                .participantName(entry.getParticipant().getName())
                 .textId(entry.getTextId())
                 .totalWords(entry.getTotalWords())
                 .correctCount(entry.getCorrectCount())
@@ -46,6 +49,8 @@ public class ReadingSpeedAttemptConverter {
                 .stressCorrectWords(entry.getStressCorrectWords())
                 .stressWordsJson(entry.getStressWordsJson())
                 .stressError(entry.getStressError())
+                .audioFileName(entry.getAudioFileName())
+                .referenceWordsJson(entry.getReferenceWordsJson())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

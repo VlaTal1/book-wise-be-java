@@ -21,3 +21,5 @@ databaseChangeLog:
       file: db/changelog/changeset/create-table-reading-speed-attempt.yaml
   - include:
       file: db/changelog/changeset/add-stress-check-columns-reading-speed-attempt.yaml
+  - include:
+      file: db/changelog/changeset/add-audio-and-reference-words-reading-speed-attempt.yaml

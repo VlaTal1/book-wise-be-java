@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-audio-and-reference-words-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: AUDIO_FILE_NAME
+                  type: VARCHAR(255)
+              - column:
+                  name: REFERENCE_WORDS_JSON
+                  type: TEXT
+      rollback:
+        - dropColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: AUDIO_FILE_NAME
+              - column:
+                  name: REFERENCE_WORDS_JSON

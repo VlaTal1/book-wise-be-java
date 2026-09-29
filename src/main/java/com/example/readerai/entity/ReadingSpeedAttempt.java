@@ -93,4 +93,20 @@ public class ReadingSpeedAttempt extends Audit {
 
     @Column(name = "STRESS_ERROR", columnDefinition = "TEXT")
     private String stressError;
+
+    // MinIO object key (books-бакет, префікс reading-audio/) — записується
+    // Python-сервісом при збереженні attempt (аудіо вже завантажено в MinIO
+    // до цього виклику). Nullable: якщо завантаження в MinIO не вдалося,
+    // основна фіча читання все одно не повинна ламатись — просто не буде
+    // відтворення аудіо в історії для цього attempt.
+    @Column(name = "AUDIO_FILE_NAME")
+    private String audioFileName;
+
+    // Еталонний текст сесії (index/word/display/in_vocabulary на слово) як
+    // JSON-масив — потрібен для показу кольорової розмітки розпізнаного
+    // тексту в історії (wordsJson дає лише статус по index, сам текст
+    // раніше ніде не зберігався). Той самий підхід, що і wordsJson/
+    // stressWordsJson — Java зберігає і повертає як є, не парсячи.
+    @Column(name = "REFERENCE_WORDS_JSON", columnDefinition = "TEXT")
+    private String referenceWordsJson;
 }
