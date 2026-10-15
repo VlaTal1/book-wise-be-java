@@ -3,13 +3,20 @@ package com.example.readerai.service;
 import com.example.readerai.converter.ParticipantConverter;
 import com.example.readerai.dto.CompleteStatus;
 import com.example.readerai.dto.statistics.GradeByParticipant;
+import com.example.readerai.dto.statistics.ReadingSpeedDailyStats;
+import com.example.readerai.dto.statistics.ReadingSpeedStatsByParticipant;
 import com.example.readerai.dto.statistics.ReadingStatsByDay;
 import com.example.readerai.dto.statistics.WeeklyStatsByParticipant;
 import com.example.readerai.entity.Participant;
 import com.example.readerai.entity.ReadingSession;
+import com.example.readerai.entity.ReadingSpeedAttempt;
+import com.example.readerai.entity.StressStatus;
 import com.example.readerai.entity.Test;
+import com.example.readerai.exception.NotFoundException;
+import com.example.readerai.exception.PermissionDeniedException;
 import com.example.readerai.repository.ParticipantRepository;
 import com.example.readerai.repository.ReadingSessionRepository;
+import com.example.readerai.repository.ReadingSpeedAttemptRepository;
 import com.example.readerai.repository.TestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,9 +31,114 @@ public class StatisticsService {
 
     private final TestRepository testRepository;
     private final ReadingSessionRepository readingSessionRepository;
+    private final ReadingSpeedAttemptRepository readingSpeedAttemptRepository;
     private final ParticipantRepository participantRepository;
     private final ParticipantConverter participantConverter;
     private final UserService userService;
+
+    public List<ReadingSpeedStatsByParticipant> getReadingSpeedStats() {
+        List<ReadingSpeedAttempt> attempts = readingSpeedAttemptRepository
+                .findAllByParticipant_UserIdOrderByCreatedAtDesc(userService.getUserId());
+
+        Map<Long, ReadingSpeedStatsByParticipant> resultMap = new LinkedHashMap<>();
+        Map<Long, Float> wpmSums = new HashMap<>();
+        Map<Long, Float> accuracySums = new HashMap<>();
+        Map<Long, Float> stressAccuracySums = new HashMap<>();
+
+        for (ReadingSpeedAttempt attempt : attempts) {
+            Participant participant = attempt.getParticipant();
+            Long participantId = participant.getId();
+
+            ReadingSpeedStatsByParticipant stats = resultMap.computeIfAbsent(
+                    participantId,
+                    id -> ReadingSpeedStatsByParticipant.builder()
+                            .participant(participantConverter.toDTO(participant))
+                            .attemptsCount(0)
+                            .averageWpm(0f)
+                            .averageAccuracy(0f)
+                            .averageStressAccuracy(null)
+                            .stressCheckedAttemptsCount(0)
+                            .build()
+            );
+
+            stats.setAttemptsCount(stats.getAttemptsCount() + 1);
+            wpmSums.merge(participantId, attempt.getWpm().floatValue(), Float::sum);
+            accuracySums.merge(participantId, attempt.getAccuracy().floatValue(), Float::sum);
+
+            // averageStressAccuracy рахуємо лише по завершених (DONE) спробах —
+            // шар перевірки наголосу асинхронний і не завжди ще готовий/вдалий
+            // (PENDING/PROCESSING/FAILED/NOT_APPLICABLE не incrementують).
+            if (attempt.getStressStatus() == StressStatus.DONE && attempt.getStressAccuracy() != null) {
+                stats.setStressCheckedAttemptsCount(stats.getStressCheckedAttemptsCount() + 1);
+                stressAccuracySums.merge(participantId, attempt.getStressAccuracy().floatValue(), Float::sum);
+            }
+        }
+
+        List<ReadingSpeedStatsByParticipant> result = new ArrayList<>(resultMap.values());
+        for (ReadingSpeedStatsByParticipant stats : result) {
+            Long participantId = stats.getParticipant().getId();
+            stats.setAverageWpm(wpmSums.get(participantId) / stats.getAttemptsCount());
+            stats.setAverageAccuracy(accuracySums.get(participantId) / stats.getAttemptsCount());
+            if (stats.getStressCheckedAttemptsCount() > 0) {
+                stats.setAverageStressAccuracy(stressAccuracySums.get(participantId) / stats.getStressCheckedAttemptsCount());
+            }
+        }
+
+        result.sort(Comparator.comparing(ReadingSpeedStatsByParticipant::getAverageWpm).reversed());
+
+        return result;
+    }
+
+    // Часовий ряд ОДНІЄЇ дитини (не всіх одразу, на відміну від
+    // getReadingSpeedStats) — для графіка "3 лінії по днях" на екрані
+    // статистики; той самий ownership-check, що й
+    // ReadingSpeedAttemptService.getHistory.
+    public List<ReadingSpeedDailyStats> getReadingSpeedDailyStats(Long participantId) {
+        Participant participant = participantRepository.findById(participantId).orElseThrow(
+                () -> new NotFoundException("Participant not found")
+        );
+        if (!Objects.equals(participant.getUserId(), userService.getUserId())) {
+            throw new PermissionDeniedException("User id mismatch");
+        }
+
+        List<ReadingSpeedAttempt> attempts = readingSpeedAttemptRepository
+                .findAllByParticipant_IdOrderByCreatedAtDesc(participantId);
+
+        Map<LocalDate, List<ReadingSpeedAttempt>> byDay = new TreeMap<>();
+        for (ReadingSpeedAttempt attempt : attempts) {
+            LocalDate day = attempt.getCreatedAt().toLocalDate();
+            byDay.computeIfAbsent(day, d -> new ArrayList<>()).add(attempt);
+        }
+
+        List<ReadingSpeedDailyStats> result = new ArrayList<>();
+        for (Map.Entry<LocalDate, List<ReadingSpeedAttempt>> entry : byDay.entrySet()) {
+            List<ReadingSpeedAttempt> dayAttempts = entry.getValue();
+
+            float wpmSum = 0f;
+            float accuracySum = 0f;
+            float stressAccuracySum = 0f;
+            int stressCheckedCount = 0;
+
+            for (ReadingSpeedAttempt attempt : dayAttempts) {
+                wpmSum += attempt.getWpm();
+                accuracySum += attempt.getAccuracy();
+                if (attempt.getStressStatus() == StressStatus.DONE && attempt.getStressAccuracy() != null) {
+                    stressAccuracySum += attempt.getStressAccuracy();
+                    stressCheckedCount++;
+                }
+            }
+
+            result.add(ReadingSpeedDailyStats.builder()
+                    .date(entry.getKey())
+                    .attemptsCount(dayAttempts.size())
+                    .averageWpm(wpmSum / dayAttempts.size())
+                    .averageAccuracy(accuracySum / dayAttempts.size())
+                    .averageStressAccuracy(stressCheckedCount > 0 ? stressAccuracySum / stressCheckedCount : null)
+                    .build());
+        }
+
+        return result;
+    }
 
     public List<GradeByParticipant> getParticipantsGrade() {
         List<Test> allTests = testRepository.findAllByProgress_Participant_UserId(userService.getUserId());
