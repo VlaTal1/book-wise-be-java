@@ -1,0 +1,141 @@
+databaseChangeLog:
+  # Перехід з моделі "батько створює дітей" на "вчитель створює клас, учні
+  # вступають за кодом зі своїх акаунтів". Старі профілі дітей прив'язані до
+  # акаунта батька і не мають сенсу в новій моделі, тому дані учасників
+  # скидаємо (книги лишаються за їхніми власниками).
+  - changeSet:
+      id: reset-participant-data-for-classrooms
+      author: VlaTal
+      changes:
+        - delete:
+            tableName: ANSWER
+        - delete:
+            tableName: QUESTION
+        - delete:
+            tableName: TEST
+        - delete:
+            tableName: READING_SESSION
+        - delete:
+            tableName: PROGRESS
+        - delete:
+            tableName: ACCESS
+        - delete:
+            tableName: READING_SPEED_ATTEMPT
+        - delete:
+            tableName: PARTICIPANT
+  - changeSet:
+      id: create-sequence-classroom
+      author: VlaTal
+      changes:
+        - createSequence:
+            sequenceName: CLASSROOM_SEQ_ID
+      rollback:
+        - dropSequence:
+            sequenceName: CLASSROOM_SEQ_ID
+  - changeSet:
+      id: create-table-classroom
+      author: VlaTal
+      changes:
+        - createTable:
+            tableName: CLASSROOM
+            columns:
+              - column:
+                  name: ID
+                  type: BIGINT
+                  defaultValueSequenceNext: CLASSROOM_SEQ_ID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: NAME
+                  type: VARCHAR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CODE
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: UQ_CLASSROOM_CODE
+              - column:
+                  name: TEACHER_USER_ID
+                  type: VARCHAR
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+              - column:
+                  name: UPDATED_AT
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: CLASSROOM
+  - changeSet:
+      id: create-sequence-classroom-book
+      author: VlaTal
+      changes:
+        - createSequence:
+            sequenceName: CLASSROOM_BOOK_SEQ_ID
+      rollback:
+        - dropSequence:
+            sequenceName: CLASSROOM_BOOK_SEQ_ID
+  - changeSet:
+      id: create-table-classroom-book
+      author: VlaTal
+      changes:
+        - createTable:
+            tableName: CLASSROOM_BOOK
+            columns:
+              - column:
+                  name: ID
+                  type: BIGINT
+                  defaultValueSequenceNext: CLASSROOM_BOOK_SEQ_ID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: CLASSROOM_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_CLASSROOM_BOOK_CLASSROOM
+                    references: CLASSROOM(ID)
+                    nullable: false
+              - column:
+                  name: BOOK_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_CLASSROOM_BOOK_BOOK
+                    references: BOOK(ID)
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+              - column:
+                  name: UPDATED_AT
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: CLASSROOM_BOOK
+  - changeSet:
+      id: add-role-and-classroom-to-participant
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: PARTICIPANT
+            columns:
+              - column:
+                  name: ROLE
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CLASSROOM_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_PARTICIPANT_CLASSROOM
+                    references: CLASSROOM(ID)
+                    nullable: true
+        - addUniqueConstraint:
+            tableName: PARTICIPANT
+            columnNames: USER_ID
+            constraintName: UQ_PARTICIPANT_USER_ID

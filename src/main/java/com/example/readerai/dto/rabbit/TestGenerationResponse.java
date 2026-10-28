@@ -19,4 +19,7 @@ public class TestGenerationResponse {
     private Long testId;
 
     private List<QuestionDTO> questions;
+
+    // Python-сервіс заповнює замість питань, якщо генерація не вдалася.
+    private String error;
 }

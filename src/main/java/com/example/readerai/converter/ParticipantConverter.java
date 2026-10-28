@@ -15,6 +15,7 @@ public class ParticipantConverter {
                 .supId(entry.getSupId())
                 .name(entry.getName())
                 .userId(entry.getUserId())
+                .role(entry.getRole())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
@@ -26,6 +27,9 @@ public class ParticipantConverter {
                 .supId(entry.getSupId())
                 .name(entry.getName())
                 .userId(entry.getUserId())
+                .role(entry.getRole())
+                .classroomId(entry.getClassroom() != null ? entry.getClassroom().getId() : null)
+                .classroomName(entry.getClassroom() != null ? entry.getClassroom().getName() : null)
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

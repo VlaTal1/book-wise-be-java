@@ -7,7 +7,6 @@ import com.example.readerai.dto.StressResultUpdateDTO;
 import com.example.readerai.entity.Participant;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.exception.NotFoundException;
-import com.example.readerai.exception.PermissionDeniedException;
 import com.example.readerai.repository.ParticipantRepository;
 import com.example.readerai.repository.ReadingSpeedAttemptRepository;
 import io.minio.errors.MinioException;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -28,7 +26,7 @@ public class ReadingSpeedAttemptService {
 
     private final ParticipantRepository participantRepository;
 
-    private final UserService userService;
+    private final ParticipantService participantService;
 
     private final ReadingSpeedAttemptConverter readingSpeedAttemptConverter;
 
@@ -54,22 +52,17 @@ public class ReadingSpeedAttemptService {
     }
 
     public List<ReadingSpeedAttemptDTO> getHistory(Long participantId) {
-        Participant participant = participantRepository.findById(participantId).orElseThrow(
-                () -> new NotFoundException("Participant not found")
-        );
-        if (!Objects.equals(participant.getUserId(), userService.getUserId())) {
-            throw new PermissionDeniedException("User id mismatch");
-        }
+        participantService.findVisible(participantId);
 
         return readingSpeedAttemptRepository.findAllByParticipant_IdOrderByCreatedAtDesc(participantId).stream()
                 .map(readingSpeedAttemptConverter::toDTO)
                 .toList();
     }
 
-    // Батьківський режим — історія по УСІХ дітях поточного користувача
-    // одним списком (participantName у DTO показує, чия це спроба).
+    // Для вчителя — історія по ВСІХ учнях його класів одним списком
+    // (participantName у DTO показує, чия це спроба), для учня — лише своя.
     public List<ReadingSpeedAttemptDTO> getHistoryForCurrentUser() {
-        return readingSpeedAttemptRepository.findAllByParticipant_UserIdOrderByCreatedAtDesc(userService.getUserId()).stream()
+        return readingSpeedAttemptRepository.findAllByParticipant_IdInOrderByCreatedAtDesc(participantService.getVisibleStudentIds()).stream()
                 .map(readingSpeedAttemptConverter::toDTO)
                 .toList();
     }
@@ -79,8 +72,8 @@ public class ReadingSpeedAttemptService {
     }
 
     // Стрім аудіо сесії читання для програвання в історії — той самий
-    // ownership-check, що й getById, бо аудіо може містити голос дитини і
-    // не повинно бути доступне нікому, крім власника (батька) цього профілю.
+    // ownership-check, що й getById, бо аудіо містить голос учня і не
+    // повинно бути доступне нікому, крім нього самого та його вчителя.
     public InputStream getAudioStream(Long id) throws MinioException {
         ReadingSpeedAttempt attempt = findOwnedAttempt(id);
         if (attempt.getAudioFileName() == null) {
@@ -109,9 +102,7 @@ public class ReadingSpeedAttemptService {
         ReadingSpeedAttempt attempt = readingSpeedAttemptRepository.findById(id).orElseThrow(
                 () -> new NotFoundException("Reading speed attempt not found")
         );
-        if (!Objects.equals(attempt.getParticipant().getUserId(), userService.getUserId())) {
-            throw new PermissionDeniedException("User id mismatch");
-        }
+        participantService.assertCanView(attempt.getParticipant());
         return attempt;
     }
 

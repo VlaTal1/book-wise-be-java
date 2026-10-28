@@ -1,19 +1,11 @@
 package com.example.readerai.service;
 
-import com.example.readerai.converter.AccessConverter;
-import com.example.readerai.converter.BookConverter;
-import com.example.readerai.converter.ParticipantConverter;
-import com.example.readerai.dto.AccessDTO;
-import com.example.readerai.dto.BookDTO;
-import com.example.readerai.dto.ParticipantDTO;
 import com.example.readerai.entity.Access;
-import com.example.readerai.exception.NotFoundException;
+import com.example.readerai.entity.Book;
+import com.example.readerai.entity.Participant;
 import com.example.readerai.repository.AccessRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,35 +13,24 @@ public class AccessService {
 
     private final AccessRepository accessRepository;
 
-    private final ParticipantService participantService;
-
-    private final BookService bookService;
-
-    private final ParticipantConverter participantConverter;
-
-    private final BookConverter bookConverter;
-
-    private final AccessConverter accessConverter;
-
     private final ProgressService progressService;
 
-    public AccessDTO grantAccess(Long bookId, Long participantId) throws NotFoundException {
-        Access access = accessRepository.findByBook_IdAndParticipant_Id(bookId, participantId);
-        if (access != null) {
-            return accessConverter.toDTO(access);
+    // Викликається з ClassroomService (призначення книги класу / вступ учня),
+    // права вчителя там уже перевірено.
+    public void grantAccess(Book book, Participant participant) {
+        Access access = accessRepository.findByBook_IdAndParticipant_Id(book.getId(), participant.getId());
+        if (access == null) {
+            accessRepository.save(Access.builder()
+                    .participant(participant)
+                    .book(book)
+                    .build());
         }
 
-        ParticipantDTO participant = participantService.getById(participantId);
-        BookDTO book = bookService.getBookById(bookId);
+        progressService.createIfNotExists(book, participant);
+    }
 
-        access = Access.builder()
-                .participant(participantConverter.fromDTO(participant))
-                .book(bookConverter.fromDTO(book))
-                .build();
-        access = accessRepository.save(access);
-
-        progressService.createIfNotExists(bookId, participantId);
-
-        return accessConverter.toDTO(access);
+    // Прогрес і тести лишаються як історія, зникає лише книга зі списку учня.
+    public void revokeAllAccesses(Participant participant) {
+        accessRepository.deleteByParticipant_Id(participant.getId());
     }
 }

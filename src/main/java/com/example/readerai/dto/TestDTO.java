@@ -1,5 +1,6 @@
 package com.example.readerai.dto;
 
+import com.example.readerai.entity.GenerationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,4 +38,6 @@ public class TestDTO extends AuditDTO {
     private Integer correctAnswers;
 
     private List<QuestionDTO> questions;
+
+    private GenerationStatus generationStatus;
 }

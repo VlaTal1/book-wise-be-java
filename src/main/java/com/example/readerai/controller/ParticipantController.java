@@ -1,5 +1,6 @@
 package com.example.readerai.controller;
 
+import com.example.readerai.dto.CreateProfileRequest;
 import com.example.readerai.dto.ParticipantDTO;
 import com.example.readerai.exception.NotFoundException;
 import com.example.readerai.service.ParticipantService;
@@ -17,21 +18,25 @@ public class ParticipantController {
 
     private final ParticipantService participantService;
 
-    @PostMapping
-    public ResponseEntity<ParticipantDTO> saveParticipant(@RequestBody ParticipantDTO participantDTO) {
-        ParticipantDTO savedParticipant = participantService.save(participantDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedParticipant);
+    // 404, якщо користувач ще не обрав роль після реєстрації.
+    @GetMapping("/me")
+    public ResponseEntity<ParticipantDTO> getCurrentProfile() {
+        return ResponseEntity.ok(participantService.getCurrentProfile());
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<ParticipantDTO>> getAllParticipants() {
-        List<ParticipantDTO> participants = participantService.getAll();
-        return ResponseEntity.ok(participants);
+    @PostMapping("/me")
+    public ResponseEntity<ParticipantDTO> createProfile(@RequestBody CreateProfileRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(participantService.createProfile(request));
+    }
+
+    // Вчитель — усі учні його класів, учень — лише він сам.
+    @GetMapping("/students")
+    public ResponseEntity<List<ParticipantDTO>> getStudents() {
+        return ResponseEntity.ok(participantService.getVisibleStudentsDTO());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ParticipantDTO> getParticipantById(@PathVariable Long id) throws NotFoundException {
-        ParticipantDTO participant = participantService.getById(id);
-        return ResponseEntity.ok(participant);
+        return ResponseEntity.ok(participantService.getById(id));
     }
 }

@@ -3,7 +3,6 @@ package com.example.readerai.controller;
 import com.example.readerai.dto.TestDTO;
 import com.example.readerai.service.TestService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,11 +14,6 @@ import java.util.List;
 public class TestController {
 
     private final TestService testService;
-
-    @PostMapping
-    public ResponseEntity<TestDTO> createTest(@RequestBody TestDTO testDTO) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(testService.createTest(testDTO));
-    }
 
     @GetMapping("/")
     public ResponseEntity<List<TestDTO>> getTests() {

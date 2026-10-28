@@ -8,9 +8,10 @@ import com.example.readerai.dto.BookWithDetails;
 import com.example.readerai.dto.FileInfo;
 import com.example.readerai.entity.Access;
 import com.example.readerai.entity.Book;
+import com.example.readerai.entity.Participant;
+import com.example.readerai.entity.UserRole;
 import com.example.readerai.exception.NotFoundException;
 import com.example.readerai.exception.PermissionDeniedException;
-import com.example.readerai.exception.ResourceNotFoundException;
 import com.example.readerai.repository.AccessRepository;
 import com.example.readerai.repository.BookRepository;
 import io.minio.errors.MinioException;
@@ -44,10 +45,22 @@ public class BookService {
 
     private final AccessConverter accessConverter;
 
+    private final ParticipantService participantService;
+
+    // Вчитель бачить завантажені ним книги, учень — призначені його класу.
     public List<BookDTO> getAllBooks() {
+        Participant current = participantService.getCurrent();
+        if (current.getRole() == UserRole.STUDENT) {
+            return getAllBooksByParticipantId(current.getId());
+        }
         return bookRepository.findByUserId(userService.getUserId()).stream()
                 .map(bookConverter::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<BookDTO> getVisibleBooksByParticipantId(Long participantId) {
+        participantService.findVisible(participantId);
+        return getAllBooksByParticipantId(participantId);
     }
 
     public List<BookDTO> getAllBooksByParticipantId(Long participantId) {
@@ -56,18 +69,38 @@ public class BookService {
     }
 
     public BookDTO getBookById(Long id) {
+        return bookConverter.toDTO(findVisibleBook(id));
+    }
+
+    // Книгу бачить вчитель, що її завантажив, і учні, яким її призначено.
+    public Book findVisibleBook(Long id) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Book not found with id: " + id));
+        String userId = userService.getUserId();
+        if (!Objects.equals(book.getUserId(), userId) && !accessRepository.existsByBook_IdAndParticipant_UserId(id, userId)) {
+            throw new PermissionDeniedException("You do not have permission to access this book");
+        }
+        return book;
+    }
+
+    public Book findOwnedBook(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Book not found with id: " + id));
         if (!Objects.equals(book.getUserId(), userService.getUserId())) {
-            throw new PermissionDeniedException("You do not have permission to access this book");
+            throw new PermissionDeniedException("Only the owner can manage this book");
         }
-        return bookConverter.toDTO(book);
+        return book;
     }
 
     public BookWithDetails getBookWithDetails(Long bookId) {
-        BookDTO book = getBookById(bookId);
-        BookWithDetails bookWithDetails = bookConverter.fromDTOtoWithDetails(book);
+        Book entity = findVisibleBook(bookId);
+        BookWithDetails bookWithDetails = bookConverter.fromDTOtoWithDetails(bookConverter.toDTO(entity));
 
+        // Список учнів з доступом потрібен лише вчителю-власнику.
+        if (!Objects.equals(entity.getUserId(), userService.getUserId())) {
+            bookWithDetails.setAccesses(List.of());
+            return bookWithDetails;
+        }
 
         List<Access> accesses = accessRepository.findByBookId(bookId);
         List<AccessDTO> accessDTOS = accesses.stream()
@@ -80,6 +113,8 @@ public class BookService {
 
     @Transactional
     public BookDTO uploadBook(String title, String author, MultipartFile file) throws IOException, MinioException {
+        participantService.requireTeacher();
+
         String contentType = file.getContentType();
         if (contentType == null || (!contentType.equals("application/epub+zip") && !contentType.equals("application/pdf"))) {
             throw new IllegalArgumentException("Only EPUB and PDF files are allowed");
@@ -104,17 +139,13 @@ public class BookService {
     }
 
     public InputStream getBookContent(Long id) throws MinioException {
-        // TODO validate authority
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
+        Book book = findVisibleBook(id);
         return minioService.getFile(book.getFileName());
     }
 
     @Transactional
     public BookDTO updateBook(Long id, String title, String author) {
-        // TODO validate authority
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
+        Book book = findOwnedBook(id);
 
         book.setTitle(title);
         book.setAuthor(author);
@@ -125,9 +156,7 @@ public class BookService {
 
     @Transactional
     public void deleteBook(Long id) throws MinioException {
-        // TODO validate authority
-        Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
+        Book book = findOwnedBook(id);
 
         minioService.deleteFile(book.getFileName());
 

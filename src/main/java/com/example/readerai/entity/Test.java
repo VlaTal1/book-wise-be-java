@@ -2,6 +2,7 @@ package com.example.readerai.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -54,4 +55,14 @@ public class Test extends Audit {
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "test")
     private List<Question> questions;
+
+    // Тест класу, з якого створено цей тест учня (null для індивідуальних тестів).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CLASSROOM_TEST_ID", referencedColumnName = "ID", foreignKey = @ForeignKey(name = "FK_TEST_CLASSROOM_TEST"))
+    private ClassroomTest classroomTest;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "GENERATION_STATUS", nullable = false, length = 20)
+    @Builder.Default
+    private GenerationStatus generationStatus = GenerationStatus.GENERATING;
 }

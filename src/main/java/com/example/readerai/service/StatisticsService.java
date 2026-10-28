@@ -12,9 +12,6 @@ import com.example.readerai.entity.ReadingSession;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.entity.StressStatus;
 import com.example.readerai.entity.Test;
-import com.example.readerai.exception.NotFoundException;
-import com.example.readerai.exception.PermissionDeniedException;
-import com.example.readerai.repository.ParticipantRepository;
 import com.example.readerai.repository.ReadingSessionRepository;
 import com.example.readerai.repository.ReadingSpeedAttemptRepository;
 import com.example.readerai.repository.TestRepository;
@@ -32,13 +29,12 @@ public class StatisticsService {
     private final TestRepository testRepository;
     private final ReadingSessionRepository readingSessionRepository;
     private final ReadingSpeedAttemptRepository readingSpeedAttemptRepository;
-    private final ParticipantRepository participantRepository;
+    private final ParticipantService participantService;
     private final ParticipantConverter participantConverter;
-    private final UserService userService;
 
     public List<ReadingSpeedStatsByParticipant> getReadingSpeedStats() {
         List<ReadingSpeedAttempt> attempts = readingSpeedAttemptRepository
-                .findAllByParticipant_UserIdOrderByCreatedAtDesc(userService.getUserId());
+                .findAllByParticipant_IdInOrderByCreatedAtDesc(participantService.getVisibleStudentIds());
 
         Map<Long, ReadingSpeedStatsByParticipant> resultMap = new LinkedHashMap<>();
         Map<Long, Float> wpmSums = new HashMap<>();
@@ -89,17 +85,12 @@ public class StatisticsService {
         return result;
     }
 
-    // Часовий ряд ОДНІЄЇ дитини (не всіх одразу, на відміну від
+    // Часовий ряд ОДНОГО учня (не всіх одразу, на відміну від
     // getReadingSpeedStats) — для графіка "3 лінії по днях" на екрані
     // статистики; той самий ownership-check, що й
     // ReadingSpeedAttemptService.getHistory.
     public List<ReadingSpeedDailyStats> getReadingSpeedDailyStats(Long participantId) {
-        Participant participant = participantRepository.findById(participantId).orElseThrow(
-                () -> new NotFoundException("Participant not found")
-        );
-        if (!Objects.equals(participant.getUserId(), userService.getUserId())) {
-            throw new PermissionDeniedException("User id mismatch");
-        }
+        participantService.findVisible(participantId);
 
         List<ReadingSpeedAttempt> attempts = readingSpeedAttemptRepository
                 .findAllByParticipant_IdOrderByCreatedAtDesc(participantId);
@@ -141,7 +132,7 @@ public class StatisticsService {
     }
 
     public List<GradeByParticipant> getParticipantsGrade() {
-        List<Test> allTests = testRepository.findAllByProgress_Participant_UserId(userService.getUserId());
+        List<Test> allTests = testRepository.findAllByProgress_Participant_IdIn(participantService.getVisibleStudentIds());
 
         Map<Long, GradeByParticipant> resultMap = new HashMap<>();
 
@@ -178,9 +169,7 @@ public class StatisticsService {
     }
 
     public List<ReadingStatsByDay> getReadingStatsByDay() {
-        String userId = userService.getUserId();
-
-        List<Participant> participants = participantRepository.findByUserId(userId);
+        List<Participant> participants = participantService.getVisibleStudents();
 
         List<ReadingStatsByDay> result = new ArrayList<>();
 
@@ -221,8 +210,7 @@ public class StatisticsService {
     }
 
     public List<WeeklyStatsByParticipant> getWeeklyStats() {
-        String userId = userService.getUserId();
-        List<Participant> participants = participantRepository.findByUserId(userId);
+        List<Participant> participants = participantService.getVisibleStudents();
 
         int currentYear = LocalDate.now().getYear();
         LocalDate yearStart = LocalDate.of(currentYear, 1, 1);

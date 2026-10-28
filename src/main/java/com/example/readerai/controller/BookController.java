@@ -32,7 +32,7 @@ public class BookController {
 
     @GetMapping("/participant/{participantId}")
     public ResponseEntity<List<BookDTO>> getAllBooksByParticipantId(@PathVariable Long participantId) {
-        List<BookDTO> books = bookService.getAllBooksByParticipantId(participantId);
+        List<BookDTO> books = bookService.getVisibleBooksByParticipantId(participantId);
         return ResponseEntity.ok(books);
     }
 

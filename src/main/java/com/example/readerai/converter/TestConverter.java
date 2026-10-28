@@ -55,6 +55,7 @@ public class TestConverter {
                 .passedDate(entry.getPassedDate())
                 .grade(entry.getGrade())
                 .correctAnswers(entry.getCorrectAnswers())
+                .generationStatus(entry.getGenerationStatus())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
