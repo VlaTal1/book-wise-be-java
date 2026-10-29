@@ -70,8 +70,28 @@ public class StatisticsService {
             }
         }
 
+        // Оцінки по учню, від найновішої (спроби вже відсортовані за датою спадно).
+        Map<Long, List<Integer>> gradesByParticipant = new HashMap<>();
+        for (ReadingSpeedAttempt attempt : attempts) {
+            if (attempt.getGrade() != null) {
+                gradesByParticipant.computeIfAbsent(attempt.getParticipant().getId(), id -> new ArrayList<>())
+                        .add(attempt.getGrade());
+            }
+        }
+
         List<ReadingSpeedStatsByParticipant> result = new ArrayList<>(resultMap.values());
         for (ReadingSpeedStatsByParticipant stats : result) {
+            List<Integer> grades = gradesByParticipant.getOrDefault(stats.getParticipant().getId(), List.of());
+            stats.setGradedAttemptsCount(grades.size());
+            if (!grades.isEmpty()) {
+                stats.setAverageGrade(average(grades));
+                stats.setLastGrade(grades.get(0));
+            }
+            if (grades.size() >= 4) {
+                List<Integer> previous = grades.subList(3, Math.min(6, grades.size()));
+                stats.setGradeTrend(average(grades.subList(0, 3)) - average(previous));
+            }
+
             Long participantId = stats.getParticipant().getId();
             stats.setAverageWpm(wpmSums.get(participantId) / stats.getAttemptsCount());
             stats.setAverageAccuracy(accuracySums.get(participantId) / stats.getAttemptsCount());
@@ -80,7 +100,10 @@ public class StatisticsService {
             }
         }
 
-        result.sort(Comparator.comparing(ReadingSpeedStatsByParticipant::getAverageWpm).reversed());
+        // Рейтинг за середньою оцінкою; учні без оцінок — наприкінці, за темпом.
+        result.sort(Comparator
+                .comparing(ReadingSpeedStatsByParticipant::getAverageGrade, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(ReadingSpeedStatsByParticipant::getAverageWpm, Comparator.reverseOrder()));
 
         return result;
     }
@@ -109,6 +132,7 @@ public class StatisticsService {
             float accuracySum = 0f;
             float stressAccuracySum = 0f;
             int stressCheckedCount = 0;
+            List<Integer> dayGrades = new ArrayList<>();
 
             for (ReadingSpeedAttempt attempt : dayAttempts) {
                 wpmSum += attempt.getWpm();
@@ -116,6 +140,9 @@ public class StatisticsService {
                 if (attempt.getStressStatus() == StressStatus.DONE && attempt.getStressAccuracy() != null) {
                     stressAccuracySum += attempt.getStressAccuracy();
                     stressCheckedCount++;
+                }
+                if (attempt.getGrade() != null) {
+                    dayGrades.add(attempt.getGrade());
                 }
             }
 
@@ -125,6 +152,7 @@ public class StatisticsService {
                     .averageWpm(wpmSum / dayAttempts.size())
                     .averageAccuracy(accuracySum / dayAttempts.size())
                     .averageStressAccuracy(stressCheckedCount > 0 ? stressAccuracySum / stressCheckedCount : null)
+                    .averageGrade(dayGrades.isEmpty() ? null : average(dayGrades))
                     .build());
         }
 
@@ -303,6 +331,10 @@ public class StatisticsService {
         }
 
         return result;
+    }
+
+    private float average(List<Integer> values) {
+        return (float) values.stream().mapToInt(Integer::intValue).average().orElse(0);
     }
 
     private String getWeekKey(LocalDate date) {

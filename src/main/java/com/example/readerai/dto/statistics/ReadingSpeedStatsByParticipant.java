@@ -28,4 +28,15 @@ public class ReadingSpeedStatsByParticipant {
     private Float averageStressAccuracy;
 
     private int stressCheckedAttemptsCount;
+
+    // Оцінки 1-10 (лише остаточні). null, якщо жодної оціненої спроби ще немає.
+    private Float averageGrade;
+
+    private int gradedAttemptsCount;
+
+    private Integer lastGrade;
+
+    // Середнє 3 останніх оцінок мінус середнє 3 попередніх: >0 — учень
+    // покращується. null, якщо оцінок замало для порівняння (<4).
+    private Float gradeTrend;
 }

@@ -30,4 +30,7 @@ public class ReadingSpeedDailyStats {
     // Null, якщо жодна спроба цього дня ще не має завершеного (DONE)
     // результату шару перевірки наголосу.
     private Float averageStressAccuracy;
+
+    // null, якщо цього дня немає жодної оціненої спроби.
+    private Float averageGrade;
 }
