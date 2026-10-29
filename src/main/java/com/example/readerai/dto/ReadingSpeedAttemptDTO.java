@@ -64,4 +64,12 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
     private String audioFileName;
 
     private String referenceWordsJson;
+
+    private Integer targetWpm;
+
+    private Integer quizTotal;
+
+    private Integer quizCorrect;
+
+    private Integer grade;
 }

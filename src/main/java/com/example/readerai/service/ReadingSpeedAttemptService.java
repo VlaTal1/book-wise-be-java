@@ -7,6 +7,7 @@ import com.example.readerai.dto.StressResultUpdateDTO;
 import com.example.readerai.entity.Participant;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.exception.NotFoundException;
+import com.example.readerai.exception.PermissionDeniedException;
 import com.example.readerai.repository.ParticipantRepository;
 import com.example.readerai.repository.ReadingSpeedAttemptRepository;
 import io.minio.errors.MinioException;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -27,6 +29,8 @@ public class ReadingSpeedAttemptService {
     private final ParticipantRepository participantRepository;
 
     private final ParticipantService participantService;
+
+    private final UserService userService;
 
     private final ReadingSpeedAttemptConverter readingSpeedAttemptConverter;
 
@@ -46,6 +50,9 @@ public class ReadingSpeedAttemptService {
 
         ReadingSpeedAttempt attempt = readingSpeedAttemptConverter.fromDTO(dto);
         attempt.setParticipant(participant);
+        if (participant.getClassroom() != null) {
+            attempt.setTargetWpm(participant.getClassroom().getTargetWpm());
+        }
 
         ReadingSpeedAttempt savedAttempt = readingSpeedAttemptRepository.save(attempt);
         return readingSpeedAttemptConverter.toDTO(savedAttempt);
@@ -130,6 +137,38 @@ public class ReadingSpeedAttemptService {
         attempt.setStressCorrectWords(dto.getCorrectWords());
         attempt.setStressWordsJson(dto.getWordsJson());
         attempt.setStressError(dto.getError());
+        updateGradeIfReady(attempt);
         readingSpeedAttemptRepository.save(attempt);
+    }
+
+    // Результат тесту на розуміння після читання надсилає сам учень (тест
+    // проходить на телефоні). Приймаємо один раз — повторно не перезаписуємо.
+    public ReadingSpeedAttemptDTO submitQuizResult(Long id, Integer correct) {
+        ReadingSpeedAttempt attempt = readingSpeedAttemptRepository.findById(id).orElseThrow(
+                () -> new NotFoundException("Reading speed attempt not found")
+        );
+        if (!Objects.equals(attempt.getParticipant().getUserId(), userService.getUserId())) {
+            throw new PermissionDeniedException("Only the student can submit the quiz result");
+        }
+        if (attempt.getQuizTotal() == null || attempt.getQuizTotal() == 0) {
+            throw new IllegalArgumentException("This attempt has no quiz");
+        }
+        if (correct == null || correct < 0 || correct > attempt.getQuizTotal()) {
+            throw new IllegalArgumentException("Correct answers must be between 0 and " + attempt.getQuizTotal());
+        }
+        if (attempt.getQuizCorrect() != null) {
+            return readingSpeedAttemptConverter.toDTO(attempt);
+        }
+
+        attempt.setQuizCorrect(correct);
+        updateGradeIfReady(attempt);
+        return readingSpeedAttemptConverter.toDTO(readingSpeedAttemptRepository.save(attempt));
+    }
+
+    // Оцінку виставляємо лише остаточну — коли і наголос, і тест уже готові.
+    private void updateGradeIfReady(ReadingSpeedAttempt attempt) {
+        if (attempt.getGrade() == null && ReadingGradeCalculator.isReady(attempt)) {
+            attempt.setGrade(ReadingGradeCalculator.calculate(attempt));
+        }
     }
 }

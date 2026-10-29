@@ -12,4 +12,6 @@ import lombok.Setter;
 public class CreateClassroomRequest {
 
     private String name;
+
+    private Integer targetWpm;
 }

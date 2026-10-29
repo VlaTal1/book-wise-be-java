@@ -23,4 +23,6 @@ public class ClassroomDTO extends AuditDTO {
     private String teacherName;
 
     private Integer studentsCount;
+
+    private Integer targetWpm;
 }

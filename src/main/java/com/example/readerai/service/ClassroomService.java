@@ -40,6 +40,9 @@ public class ClassroomService {
     private static final int CODE_LENGTH = 6;
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private static final int MIN_TARGET_WPM = 10;
+    private static final int MAX_TARGET_WPM = 300;
+
     private final ClassroomRepository classroomRepository;
 
     private final ClassroomBookRepository classroomBookRepository;
@@ -62,19 +65,38 @@ public class ClassroomService {
 
     private final TestService testService;
 
-    public ClassroomDTO create(String name) {
+    public ClassroomDTO create(String name, Integer targetWpm) {
         Participant teacher = participantService.requireTeacher();
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Classroom name cannot be empty");
-        }
+        validate(name, targetWpm);
 
         Classroom classroom = classroomRepository.save(Classroom.builder()
                 .name(name.trim())
                 .code(generateUniqueCode())
                 .teacherUserId(teacher.getUserId())
+                .targetWpm(targetWpm)
                 .build());
 
         return toDTO(classroom, teacher.getName());
+    }
+
+    // Нова норма впливає лише на наступні спроби читання — вже виставлені
+    // оцінки зберігають норму, з якою рахувалися.
+    public ClassroomDetailsDTO update(Long classroomId, String name, Integer targetWpm) {
+        Classroom classroom = findOwned(classroomId);
+        validate(name, targetWpm);
+        classroom.setName(name.trim());
+        classroom.setTargetWpm(targetWpm);
+        classroomRepository.save(classroom);
+        return getDetails(classroomId);
+    }
+
+    private void validate(String name, Integer targetWpm) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Classroom name cannot be empty");
+        }
+        if (targetWpm == null || targetWpm < MIN_TARGET_WPM || targetWpm > MAX_TARGET_WPM) {
+            throw new IllegalArgumentException("Target words per minute must be between " + MIN_TARGET_WPM + " and " + MAX_TARGET_WPM);
+        }
     }
 
     // Вчитель — усі свої класи, учень — клас, у якому він зараз (або порожньо).
@@ -101,6 +123,7 @@ public class ClassroomService {
                 .code(base.getCode())
                 .teacherName(base.getTeacherName())
                 .studentsCount(base.getStudentsCount())
+                .targetWpm(base.getTargetWpm())
                 .createdAt(base.getCreatedAt())
                 .updatedAt(base.getUpdatedAt())
                 .students(participantRepository.findByClassroom_IdOrderByName(classroomId).stream()
@@ -326,6 +349,7 @@ public class ClassroomService {
                 .code(classroom.getCode())
                 .teacherName(teacherName)
                 .studentsCount(participantRepository.findByClassroom_IdOrderByName(classroom.getId()).size())
+                .targetWpm(classroom.getTargetWpm())
                 .createdAt(classroom.getCreatedAt())
                 .updatedAt(classroom.getUpdatedAt())
                 .build();

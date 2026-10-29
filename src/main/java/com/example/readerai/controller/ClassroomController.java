@@ -23,7 +23,7 @@ public class ClassroomController {
 
     @PostMapping
     public ResponseEntity<ClassroomDTO> create(@RequestBody CreateClassroomRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(classroomService.create(request.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(classroomService.create(request.getName(), request.getTargetWpm()));
     }
 
     @GetMapping
@@ -34,6 +34,11 @@ public class ClassroomController {
     @GetMapping("/{id}")
     public ResponseEntity<ClassroomDetailsDTO> getDetails(@PathVariable Long id) {
         return ResponseEntity.ok(classroomService.getDetails(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ClassroomDetailsDTO> update(@PathVariable Long id, @RequestBody CreateClassroomRequest request) {
+        return ResponseEntity.ok(classroomService.update(id, request.getName(), request.getTargetWpm()));
     }
 
     @DeleteMapping("/{id}")

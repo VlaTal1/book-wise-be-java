@@ -1,5 +1,6 @@
 package com.example.readerai.controller;
 
+import com.example.readerai.dto.QuizResultRequest;
 import com.example.readerai.dto.ReadingSpeedAttemptDTO;
 import com.example.readerai.dto.StressProgressUpdateDTO;
 import com.example.readerai.dto.StressResultUpdateDTO;
@@ -80,6 +81,12 @@ public class ReadingSpeedAttemptController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("audio/wav"))
                 .body(new InputStreamResource(audio));
+    }
+
+    // Учень після проходження тесту на розуміння — для остаточної оцінки.
+    @PostMapping("/api/reading-speed-attempts/{id}/quiz")
+    public ResponseEntity<ReadingSpeedAttemptDTO> submitQuizResult(@PathVariable Long id, @RequestBody QuizResultRequest request) {
+        return ResponseEntity.ok(readingSpeedAttemptService.submitQuizResult(id, request.getCorrect()));
     }
 
     // Проміжні оновлення прогресу шару перевірки наголосу від Python-сервісу.

@@ -1,0 +1,34 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-target-wpm-to-classroom
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: CLASSROOM
+            columns:
+              # Існуючим класам — середня норма молодшої школи; вчитель може змінити.
+              - column:
+                  name: TARGET_WPM
+                  type: INTEGER
+                  defaultValueNumeric: 70
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: add-grade-to-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: TARGET_WPM
+                  type: INTEGER
+              - column:
+                  name: QUIZ_TOTAL
+                  type: INTEGER
+              - column:
+                  name: QUIZ_CORRECT
+                  type: INTEGER
+              - column:
+                  name: GRADE
+                  type: INTEGER

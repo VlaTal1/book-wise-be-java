@@ -109,4 +109,22 @@ public class ReadingSpeedAttempt extends Audit {
     // stressWordsJson — Java зберігає і повертає як є, не парсячи.
     @Column(name = "REFERENCE_WORDS_JSON", columnDefinition = "TEXT")
     private String referenceWordsJson;
+
+    // Норма темпу класу на момент спроби — щоб пізніша зміна норми вчителем
+    // не переписувала вже виставлені оцінки.
+    @Column(name = "TARGET_WPM")
+    private Integer targetWpm;
+
+    // Тест на розуміння після читання: скільки питань згенеровано (0 — тесту
+    // не було) і скільки учень відповів правильно (null — ще не пройшов).
+    @Column(name = "QUIZ_TOTAL")
+    private Integer quizTotal;
+
+    @Column(name = "QUIZ_CORRECT")
+    private Integer quizCorrect;
+
+    // Оцінка 1-10 (ReadingGradeCalculator) — лише остаточна: з'являється,
+    // коли готові і перевірка наголосу, і результат тесту.
+    @Column(name = "GRADE")
+    private Integer grade;
 }

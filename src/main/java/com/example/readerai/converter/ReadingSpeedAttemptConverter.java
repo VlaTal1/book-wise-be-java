@@ -22,6 +22,7 @@ public class ReadingSpeedAttemptConverter {
                 .wordsJson(entry.getWordsJson())
                 .audioFileName(entry.getAudioFileName())
                 .referenceWordsJson(entry.getReferenceWordsJson())
+                .quizTotal(entry.getQuizTotal())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
@@ -51,6 +52,10 @@ public class ReadingSpeedAttemptConverter {
                 .stressError(entry.getStressError())
                 .audioFileName(entry.getAudioFileName())
                 .referenceWordsJson(entry.getReferenceWordsJson())
+                .targetWpm(entry.getTargetWpm())
+                .quizTotal(entry.getQuizTotal())
+                .quizCorrect(entry.getQuizCorrect())
+                .grade(entry.getGrade())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
