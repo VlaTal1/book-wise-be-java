@@ -1,0 +1,34 @@
+databaseChangeLog:
+  # Режим завдання читання: FIXED — фрагмент, обраний вчителем (текст
+  # збережено), RANDOM — щоразу випадковий уривок з обраної книги (для книг
+  # каталогу — з заздалегідь підготовлених уривків). У RANDOM сторінок і
+  # тексту немає.
+  - changeSet:
+      id: add-mode-to-classroom-reading
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: CLASSROOM_READING
+            columns:
+              - column:
+                  name: MODE
+                  type: VARCHAR(20)
+                  defaultValue: FIXED
+                  constraints:
+                    nullable: false
+        - dropNotNullConstraint:
+            tableName: CLASSROOM_READING
+            columnName: START_PAGE
+            columnDataType: INTEGER
+        - dropNotNullConstraint:
+            tableName: CLASSROOM_READING
+            columnName: END_PAGE
+            columnDataType: INTEGER
+        - dropNotNullConstraint:
+            tableName: CLASSROOM_READING
+            columnName: TEXT
+            columnDataType: TEXT
+        - dropNotNullConstraint:
+            tableName: CLASSROOM_READING
+            columnName: WORD_COUNT
+            columnDataType: INTEGER

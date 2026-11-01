@@ -1,5 +1,6 @@
 package com.example.readerai.dto.reading;
 
+import com.example.readerai.entity.ReadingMode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,6 +11,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClassroomReadingRequest {
+
+    // FIXED (за замовчуванням) — фрагмент за сторінками й абзацами;
+    // RANDOM — випадкові уривки з книги, сторінки й абзаци не потрібні.
+    private ReadingMode mode;
 
     private Long bookId;
 

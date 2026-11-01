@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -182,6 +183,14 @@ public class ClassroomService {
         }
 
         accessService.revokeAllAccesses(student);
+        enroll(student, classroom);
+
+        return toDTO(classroom, getTeacherName(classroom));
+    }
+
+    // Учень у класі: доступ до книг класу й уже призначені класу тести
+    // (і для того, хто вступив за кодом, і для локального учня).
+    private void enroll(Participant student, Classroom classroom) {
         student.setClassroom(classroom);
         participantRepository.save(student);
 
@@ -189,14 +198,43 @@ public class ClassroomService {
             accessService.grantAccess(classroomBook.getBook(), student);
         }
 
-        // Учень, що вступив пізніше, отримує вже призначені класу тести.
         for (ClassroomTest classroomTest : classroomTestRepository.findByClassroom_Id(classroom.getId())) {
             if (!testRepository.existsByClassroomTest_IdAndProgress_Participant_Id(classroomTest.getId(), student.getId())) {
                 testService.createStudentTest(classroomTest, student);
             }
         }
+    }
 
-        return toDTO(classroom, getTeacherName(classroom));
+    // Локальний учень без акаунта — читає з телефона вчителя (режим учня).
+    @Transactional
+    public ClassroomDetailsDTO createLocalStudent(Long classroomId, String name) {
+        Classroom classroom = findOwned(classroomId);
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Student name cannot be empty");
+        }
+        Participant student = participantRepository.save(Participant.builder()
+                .name(name.trim())
+                .role(UserRole.STUDENT)
+                .userId("local:" + UUID.randomUUID())
+                .local(true)
+                .build());
+        enroll(student, classroom);
+        return getDetails(classroomId);
+    }
+
+    // Локального учня прибираємо з класу, але не видаляємо: його спроби
+    // читання й тести лишаються в історії (так само, як після видалення класу).
+    @Transactional
+    public ClassroomDetailsDTO removeLocalStudent(Long classroomId, Long studentId) {
+        findOwned(classroomId);
+        Participant student = participantRepository.findById(studentId)
+                .filter(Participant::isLocal)
+                .filter(participant -> participant.getClassroom() != null && Objects.equals(participant.getClassroom().getId(), classroomId))
+                .orElseThrow(() -> new NotFoundException("Local student with id " + studentId + " not found in this classroom"));
+        accessService.revokeAllAccesses(student);
+        student.setClassroom(null);
+        participantRepository.save(student);
+        return getDetails(classroomId);
     }
 
     @Transactional

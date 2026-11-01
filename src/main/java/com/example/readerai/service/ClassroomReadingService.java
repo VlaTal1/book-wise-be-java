@@ -9,6 +9,7 @@ import com.example.readerai.entity.Book;
 import com.example.readerai.entity.Classroom;
 import com.example.readerai.entity.ClassroomReading;
 import com.example.readerai.entity.Participant;
+import com.example.readerai.entity.ReadingMode;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.exception.NoAttemptsLeftException;
 import com.example.readerai.exception.NotFoundException;
@@ -78,8 +79,19 @@ public class ClassroomReadingService {
             throw new IllegalArgumentException("Book is required");
         }
         Book book = findClassroomBook(classroomId, request.getBookId());
-        validatePages(request.getStartPage(), request.getEndPage());
         validateLimits(request.getTimeLimitSeconds(), request.getMaxAttempts());
+
+        if (request.getMode() == ReadingMode.RANDOM) {
+            return toTeacherDTO(classroomReadingRepository.save(ClassroomReading.builder()
+                    .classroom(classroom)
+                    .book(book)
+                    .mode(ReadingMode.RANDOM)
+                    .timeLimitSeconds(request.getTimeLimitSeconds())
+                    .maxAttempts(request.getMaxAttempts())
+                    .build()));
+        }
+
+        validatePages(request.getStartPage(), request.getEndPage());
 
         List<String> paragraphs = pythonClient.getBookParagraphs(book.getFileName(), request.getStartPage(), request.getEndPage());
         Integer start = request.getStartParagraph();
@@ -100,6 +112,7 @@ public class ClassroomReadingService {
         ClassroomReading reading = classroomReadingRepository.save(ClassroomReading.builder()
                 .classroom(classroom)
                 .book(book)
+                .mode(ReadingMode.FIXED)
                 .startPage(request.getStartPage())
                 .endPage(request.getEndPage())
                 .text(text)
@@ -195,10 +208,16 @@ public class ClassroomReadingService {
             throw new NoAttemptsLeftException("No attempts left");
         }
 
+        Book book = reading.getBook();
         return ReadingSessionDTO.builder()
                 .id(reading.getId())
-                .title(reading.getBook().getTitle())
+                .mode(reading.getMode())
+                .title(book.getTitle())
                 .text(reading.getText())
+                .bookId(book.getId())
+                .fileName(book.getFileName())
+                .fileType(book.getFileType())
+                .catalogKey(book.getCatalogKey())
                 .timeLimitSeconds(reading.getTimeLimitSeconds())
                 .maxAttempts(reading.getMaxAttempts())
                 .attemptsUsed(attemptsUsed)
@@ -237,16 +256,17 @@ public class ClassroomReadingService {
     }
 
     private ClassroomReadingDTO toBaseDTO(ClassroomReading reading) {
-        String text = reading.getText().replace('\n', ' ');
+        String text = reading.getText() == null ? null : reading.getText().replace('\n', ' ');
         return ClassroomReadingDTO.builder()
                 .id(reading.getId())
+                .mode(reading.getMode())
                 .classroomId(reading.getClassroom().getId())
                 .bookId(reading.getBook().getId())
                 .bookTitle(reading.getBook().getTitle())
                 .startPage(reading.getStartPage())
                 .endPage(reading.getEndPage())
                 .wordCount(reading.getWordCount())
-                .preview(text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "…" : text)
+                .preview(text == null || text.length() <= PREVIEW_LENGTH ? text : text.substring(0, PREVIEW_LENGTH).trim() + "…")
                 .timeLimitSeconds(reading.getTimeLimitSeconds())
                 .maxAttempts(reading.getMaxAttempts())
                 .createdAt(reading.getCreatedAt())

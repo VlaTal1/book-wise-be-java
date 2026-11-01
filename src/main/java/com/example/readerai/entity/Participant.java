@@ -2,6 +2,7 @@ package com.example.readerai.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -39,4 +40,10 @@ public class Participant extends Audit {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CLASSROOM_ID", referencedColumnName = "ID", foreignKey = @ForeignKey(name = "FK_PARTICIPANT_CLASSROOM"))
     private Classroom classroom;
+
+    // Локальний учень: створений вчителем без власного акаунта, читає з
+    // телефона вчителя (userId — синтетичний "local:<uuid>").
+    @Column(name = "IS_LOCAL", nullable = false)
+    @Builder.Default
+    private boolean local = false;
 }

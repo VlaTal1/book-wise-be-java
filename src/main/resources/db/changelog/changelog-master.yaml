@@ -35,3 +35,7 @@ databaseChangeLog:
       file: db/changelog/changeset/book-catalog.yaml
   - include:
       file: db/changelog/changeset/classroom-reading.yaml
+  - include:
+      file: db/changelog/changeset/local-students.yaml
+  - include:
+      file: db/changelog/changeset/classroom-reading-random-mode.yaml

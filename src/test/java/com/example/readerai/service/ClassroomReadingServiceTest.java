@@ -7,7 +7,9 @@ import com.example.readerai.entity.Book;
 import com.example.readerai.entity.Classroom;
 import com.example.readerai.entity.ClassroomReading;
 import com.example.readerai.entity.Participant;
+import com.example.readerai.entity.ReadingMode;
 import com.example.readerai.entity.ReadingSpeedAttempt;
+import com.example.readerai.dto.reading.ReadingSessionDTO;
 import com.example.readerai.entity.UserRole;
 import com.example.readerai.repository.ClassroomBookRepository;
 import com.example.readerai.repository.ClassroomReadingRepository;
@@ -118,7 +120,7 @@ class ClassroomReadingServiceTest {
         when(pythonClient.getBookParagraphs("catalog/11_grade.pdf", 3, 4))
                 .thenReturn(List.of("Нульовий абзац.", "Перший абзац тексту.", "Другий, кінцевий абзац.", "Третій."));
 
-        ClassroomReadingRequest request = new ClassroomReadingRequest(2L, 3, 4, 1, 2, null, 3);
+        ClassroomReadingRequest request = new ClassroomReadingRequest(ReadingMode.FIXED, 2L, 3, 4, 1, 2, null, 3);
         service.create(1L, request);
 
         ArgumentCaptor<ClassroomReading> saved = ArgumentCaptor.forClass(ClassroomReading.class);
@@ -133,16 +135,16 @@ class ClassroomReadingServiceTest {
     void createRejectsInvalidInput() {
         when(pythonClient.getBookParagraphs(any(), eq(3), eq(4))).thenReturn(List.of("Один.", "Два."));
 
-        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(2L, 3, 4, 1, 5, null, null)))
+        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(ReadingMode.FIXED, 2L, 3, 4, 1, 5, null, null)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("paragraph");
-        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(2L, 3, 4, 0, 1, 5, null)))
+        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(ReadingMode.FIXED, 2L, 3, 4, 0, 1, 5, null)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Time limit");
-        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(2L, 3, 4, 0, 1, null, 0)))
+        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(ReadingMode.FIXED, 2L, 3, 4, 0, 1, null, 0)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Attempts");
-        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(2L, 4, 3, 0, 1, null, null)))
+        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(ReadingMode.FIXED, 2L, 4, 3, 0, 1, null, null)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("page range");
         when(classroomBookRepository.existsByClassroom_IdAndBook_Id(1L, 99L)).thenReturn(false);
-        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(99L, 3, 4, 0, 1, null, null)))
+        assertThatThrownBy(() -> service.create(1L, new ClassroomReadingRequest(ReadingMode.FIXED, 99L, 3, 4, 0, 1, null, null)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("not assigned");
         verify(classroomReadingRepository, never()).save(any());
     }
@@ -159,6 +161,30 @@ class ClassroomReadingServiceTest {
         verify(readingSpeedAttemptRepository).save(kept);
         verify(readingSpeedAttemptRepository, never()).delete(any());
         verify(classroomReadingRepository).delete(reading);
+    }
+
+    @Test
+    void randomModeNeedsNoPagesAndSessionPointsToBook() {
+        ClassroomReadingRequest request = new ClassroomReadingRequest(ReadingMode.RANDOM, 2L, null, null, null, null, 120, null);
+        service.create(1L, request);
+
+        ArgumentCaptor<ClassroomReading> saved = ArgumentCaptor.forClass(ClassroomReading.class);
+        verify(classroomReadingRepository).save(saved.capture());
+        assertThat(saved.getValue().getMode()).isEqualTo(ReadingMode.RANDOM);
+        assertThat(saved.getValue().getText()).isNull();
+        assertThat(saved.getValue().getStartPage()).isNull();
+        verify(pythonClient, never()).getBookParagraphs(any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
+
+        book.setCatalogKey("11_grade");
+        ClassroomReading random = ClassroomReading.builder().id(11L).classroom(classroom).book(book).mode(ReadingMode.RANDOM).timeLimitSeconds(120).build();
+        when(classroomReadingRepository.findById(11L)).thenReturn(Optional.of(random));
+        when(participantRepository.findById(6L)).thenReturn(Optional.of(student(6, "Макс")));
+        ReadingSessionDTO session = service.getSession(11L, 6L);
+        assertThat(session.getMode()).isEqualTo(ReadingMode.RANDOM);
+        assertThat(session.getText()).isNull();
+        assertThat(session.getFileName()).isEqualTo("catalog/11_grade.pdf");
+        assertThat(session.getCatalogKey()).isEqualTo("11_grade");
+        assertThat(session.getTimeLimitSeconds()).isEqualTo(120);
     }
 
     @Test

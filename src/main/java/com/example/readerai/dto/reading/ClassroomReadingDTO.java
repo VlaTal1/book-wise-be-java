@@ -1,6 +1,7 @@
 package com.example.readerai.dto.reading;
 
 import com.example.readerai.dto.AuditDTO;
+import com.example.readerai.entity.ReadingMode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,8 @@ public class ClassroomReadingDTO extends AuditDTO {
     private Long id;
 
     private Long classroomId;
+
+    private ReadingMode mode;
 
     private Long bookId;
 

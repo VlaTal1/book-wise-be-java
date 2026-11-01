@@ -2,6 +2,7 @@ package com.example.readerai.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,17 +32,23 @@ public class ClassroomReading extends Audit {
     @JoinColumn(name = "BOOK_ID", nullable = false, referencedColumnName = "ID", foreignKey = @ForeignKey(name = "FK_CLASSROOM_READING_BOOK"))
     private Book book;
 
-    @Column(name = "START_PAGE", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "MODE", nullable = false, length = 20)
+    @Builder.Default
+    private ReadingMode mode = ReadingMode.FIXED;
+
+    // Сторінки, текст і кількість слів — лише для FIXED.
+    @Column(name = "START_PAGE")
     private Integer startPage;
 
-    @Column(name = "END_PAGE", nullable = false)
+    @Column(name = "END_PAGE")
     private Integer endPage;
 
     // Чистий текст обраних абзаців, абзаци розділені "\n".
-    @Column(name = "TEXT", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "TEXT", columnDefinition = "TEXT")
     private String text;
 
-    @Column(name = "WORD_COUNT", nullable = false)
+    @Column(name = "WORD_COUNT")
     private Integer wordCount;
 
     // null — без ліміту часу.

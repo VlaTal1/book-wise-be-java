@@ -30,6 +30,7 @@ public class ParticipantConverter {
                 .role(entry.getRole())
                 .classroomId(entry.getClassroom() != null ? entry.getClassroom().getId() : null)
                 .classroomName(entry.getClassroom() != null ? entry.getClassroom().getName() : null)
+                .local(entry.isLocal())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

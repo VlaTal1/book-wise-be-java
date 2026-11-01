@@ -1,5 +1,6 @@
 package com.example.readerai.config.security;
 
+import com.example.readerai.repository.ParticipantRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +19,7 @@ public class SecurityConfig {
     private String supabaseUrl;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ParticipantRepository participantRepository) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -29,7 +30,9 @@ public class SecurityConfig {
                         .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(supabaseUrl), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(supabaseUrl), UsernamePasswordAuthenticationFilter.class)
+                // Після JWT: режим учня на телефоні вчителя (локальні учні).
+                .addFilterAfter(new ActAsStudentFilter(participantRepository), JwtAuthenticationFilter.class);
 
         return http.build();
     }

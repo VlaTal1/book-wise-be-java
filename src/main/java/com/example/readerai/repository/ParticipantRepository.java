@@ -11,6 +11,9 @@ import java.util.Optional;
 public interface ParticipantRepository extends JpaRepository<Participant, Long> {
     Optional<Participant> findByUserId(String userId);
 
+    // Локальний учень класу цього вчителя (для режиму учня на телефоні вчителя).
+    Optional<Participant> findByIdAndLocalTrueAndClassroom_TeacherUserId(Long id, String teacherUserId);
+
     List<Participant> findByClassroom_IdOrderByName(Long classroomId);
 
     // Усі учні з класів цього вчителя.

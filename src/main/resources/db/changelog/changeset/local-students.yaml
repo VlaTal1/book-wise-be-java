@@ -1,0 +1,18 @@
+databaseChangeLog:
+  # Локальні учні: створює вчитель у своєму класі, без реєстрації в Supabase.
+  # Читають з телефона вчителя (режим учня, заголовок X-Act-As-Participant).
+  # USER_ID у них синтетичний ("local:<uuid>"), щоб уся логіка доступу, що
+  # порівнює Participant.userId з поточним користувачем, працювала без змін.
+  - changeSet:
+      id: add-is-local-to-participant
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: PARTICIPANT
+            columns:
+              - column:
+                  name: IS_LOCAL
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

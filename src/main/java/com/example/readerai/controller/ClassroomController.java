@@ -5,6 +5,7 @@ import com.example.readerai.dto.classroom.ClassroomDTO;
 import com.example.readerai.dto.classroom.ClassroomDetailsDTO;
 import com.example.readerai.dto.classroom.ClassroomTestRequest;
 import com.example.readerai.dto.classroom.CreateClassroomRequest;
+import com.example.readerai.dto.classroom.CreateLocalStudentRequest;
 import com.example.readerai.dto.classroom.JoinClassroomRequest;
 import com.example.readerai.service.ClassroomService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,17 @@ public class ClassroomController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         classroomService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Локальні учні (без акаунта) — читають з телефона вчителя.
+    @PostMapping("/{id}/local-students")
+    public ResponseEntity<ClassroomDetailsDTO> createLocalStudent(@PathVariable Long id, @RequestBody CreateLocalStudentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(classroomService.createLocalStudent(id, request.getName()));
+    }
+
+    @DeleteMapping("/{id}/local-students/{studentId}")
+    public ResponseEntity<ClassroomDetailsDTO> removeLocalStudent(@PathVariable Long id, @PathVariable Long studentId) {
+        return ResponseEntity.ok(classroomService.removeLocalStudent(id, studentId));
     }
 
     @PostMapping("/join")
