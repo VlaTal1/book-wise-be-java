@@ -36,6 +36,8 @@ public class ReadingSpeedAttemptService {
 
     private final MinioService minioService;
 
+    private final ClassroomReadingService classroomReadingService;
+
     // Викликається лише Python-сервісом через внутрішній ендпоінт (/internal/**,
     // захищений API-ключем, не Supabase JWT) — тут немає автентифікованого
     // користувача в контексті, тож перевірку власника учасника не робимо.
@@ -53,6 +55,9 @@ public class ReadingSpeedAttemptService {
         if (participant.getClassroom() != null) {
             attempt.setTargetWpm(participant.getClassroom().getTargetWpm());
         }
+        // Спроба по завданню класу; якщо завдання вже видалили — зберігаємо
+        // як звичайну спробу, щоб не губити результат учня.
+        classroomReadingService.findById(dto.getClassroomReadingId()).ifPresent(attempt::setClassroomReading);
 
         ReadingSpeedAttempt savedAttempt = readingSpeedAttemptRepository.save(attempt);
         return readingSpeedAttemptConverter.toDTO(savedAttempt);

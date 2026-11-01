@@ -127,4 +127,9 @@ public class ReadingSpeedAttempt extends Audit {
     // коли готові і перевірка наголосу, і результат тесту.
     @Column(name = "GRADE")
     private Integer grade;
+
+    // Фрагмент, призначений класу; null — вільне тренування (випадковий уривок).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CLASSROOM_READING_ID", referencedColumnName = "ID", foreignKey = @ForeignKey(name = "FK_READING_SPEED_ATTEMPT_CLASSROOM_READING"))
+    private ClassroomReading classroomReading;
 }

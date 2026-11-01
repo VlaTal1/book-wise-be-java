@@ -1,0 +1,91 @@
+databaseChangeLog:
+  # Фрагмент книги для читання на швидкість, призначений вчителем класу.
+  # Текст зберігаємо готовим (чистий текст обраних абзаців), щоб усі учні
+  # читали однаковий текст незалежно від майбутніх змін витягу тексту з PDF.
+  - changeSet:
+      id: create-sequence-classroom-reading
+      author: VlaTal
+      changes:
+        - createSequence:
+            sequenceName: CLASSROOM_READING_SEQ_ID
+      rollback:
+        - dropSequence:
+            sequenceName: CLASSROOM_READING_SEQ_ID
+  - changeSet:
+      id: create-table-classroom-reading
+      author: VlaTal
+      changes:
+        - createTable:
+            tableName: CLASSROOM_READING
+            columns:
+              - column:
+                  name: ID
+                  type: BIGINT
+                  defaultValueSequenceNext: CLASSROOM_READING_SEQ_ID
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: CLASSROOM_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_CLASSROOM_READING_CLASSROOM
+                    references: CLASSROOM(ID)
+                    nullable: false
+              - column:
+                  name: BOOK_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_CLASSROOM_READING_BOOK
+                    references: BOOK(ID)
+                    nullable: false
+              - column:
+                  name: START_PAGE
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: END_PAGE
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: TEXT
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: WORD_COUNT
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              # NULL — без ліміту часу (читати до кінця фрагмента)
+              - column:
+                  name: TIME_LIMIT_SECONDS
+                  type: INTEGER
+              # NULL — без обмеження кількості спроб
+              - column:
+                  name: MAX_ATTEMPTS
+                  type: INTEGER
+              - column:
+                  name: CREATED_AT
+                  type: TIMESTAMP
+              - column:
+                  name: UPDATED_AT
+                  type: TIMESTAMP
+      rollback:
+        - dropTable:
+            tableName: CLASSROOM_READING
+  - changeSet:
+      id: add-classroom-reading-to-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: CLASSROOM_READING_ID
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: FK_READING_SPEED_ATTEMPT_CLASSROOM_READING
+                    references: CLASSROOM_READING(ID)
+                    nullable: true

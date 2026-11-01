@@ -2,6 +2,7 @@ package com.example.readerai.dto.classroom;
 
 import com.example.readerai.dto.BookDTO;
 import com.example.readerai.dto.ParticipantDTO;
+import com.example.readerai.dto.reading.ClassroomReadingDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,4 +24,7 @@ public class ClassroomDetailsDTO extends ClassroomDTO {
 
     // Лише для вчителя класу; учень бачить свої тести на екрані тестів.
     private List<ClassroomTestDTO> tests;
+
+    // Фрагменти для читання на швидкість — лише для вчителя класу.
+    private List<ClassroomReadingDTO> readings;
 }

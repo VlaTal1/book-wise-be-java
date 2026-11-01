@@ -33,3 +33,5 @@ databaseChangeLog:
       file: db/changelog/changeset/reading-grade.yaml
   - include:
       file: db/changelog/changeset/book-catalog.yaml
+  - include:
+      file: db/changelog/changeset/classroom-reading.yaml

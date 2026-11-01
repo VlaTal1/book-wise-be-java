@@ -65,6 +65,8 @@ public class ClassroomService {
 
     private final TestService testService;
 
+    private final ClassroomReadingService classroomReadingService;
+
     public ClassroomDTO create(String name, Integer targetWpm) {
         Participant teacher = participantService.requireTeacher();
         validate(name, targetWpm);
@@ -137,6 +139,7 @@ public class ClassroomService {
                                 .map(this::toTestDTO)
                                 .toList()
                         : List.of())
+                .readings(isTeacherOf(classroom) ? classroomReadingService.getForTeacher(classroomId) : List.of())
                 .build();
     }
 
@@ -157,6 +160,7 @@ public class ClassroomService {
             }
             classroomTestRepository.delete(classroomTest);
         }
+        classroomReadingService.deleteAllForClassroom(classroomId);
         classroomBookRepository.deleteByClassroom_Id(classroomId);
         classroomRepository.delete(classroom);
     }

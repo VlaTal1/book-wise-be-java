@@ -1,6 +1,8 @@
 package com.example.readerai.config;
 
 import com.example.readerai.exception.ErrorResponse;
+import com.example.readerai.exception.NoAttemptsLeftException;
+import com.example.readerai.exception.ServiceUnavailableException;
 import com.example.readerai.exception.NotFoundException;
 import com.example.readerai.exception.PermissionDeniedException;
 import com.example.readerai.exception.ResourceNotFoundException;
@@ -35,6 +37,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handlePermissionDeniedException(PermissionDeniedException ex) {
         ErrorResponse error = new ErrorResponse(HttpStatus.FORBIDDEN.value(), ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NoAttemptsLeftException.class)
+    public ResponseEntity<ErrorResponse> handleNoAttemptsLeft(NoAttemptsLeftException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleServiceUnavailable(ServiceUnavailableException ex) {
+        ErrorResponse error = new ErrorResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(NotFoundException.class)

@@ -72,4 +72,7 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
     private Integer quizCorrect;
 
     private Integer grade;
+
+    // Фрагмент, призначений класу (надсилає Python); null — вільне тренування.
+    private Long classroomReadingId;
 }

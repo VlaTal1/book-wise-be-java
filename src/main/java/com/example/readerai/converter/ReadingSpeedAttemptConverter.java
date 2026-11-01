@@ -56,6 +56,7 @@ public class ReadingSpeedAttemptConverter {
                 .quizTotal(entry.getQuizTotal())
                 .quizCorrect(entry.getQuizCorrect())
                 .grade(entry.getGrade())
+                .classroomReadingId(entry.getClassroomReading() == null ? null : entry.getClassroomReading().getId())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

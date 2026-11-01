@@ -4,6 +4,10 @@ supabase:
 internal:
   api-key: ${INTERNAL_API_KEY}
 
+# Python-сервіс (чистий текст сторінок книги для призначення фрагмента читання)
+python:
+  base-url: ${PYTHON_BASE_URL:http://localhost:8001}
+
 minio:
   endpoint: ${MINIO_ENDPOINT}
   accessKey: ${MINIO_ACCESS_KEY}
