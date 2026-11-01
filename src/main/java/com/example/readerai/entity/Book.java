@@ -44,4 +44,8 @@ public class Book extends Audit {
 
     @Column(name = "FILE_TYPE", nullable = false)
     private String fileType;
+
+    // Ключ книги з вбудованого каталогу; null — книга, завантажена вчителем.
+    @Column(name = "CATALOG_KEY")
+    private String catalogKey;
 }

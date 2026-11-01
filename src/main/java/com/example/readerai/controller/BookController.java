@@ -2,7 +2,9 @@ package com.example.readerai.controller;
 
 import com.example.readerai.dto.BookDTO;
 import com.example.readerai.dto.BookWithDetails;
+import com.example.readerai.dto.CatalogBookDTO;
 import com.example.readerai.exception.NotFoundException;
+import com.example.readerai.service.BookCatalogService;
 import com.example.readerai.service.BookService;
 import io.minio.errors.MinioException;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +26,24 @@ public class BookController {
 
     private final BookService bookService;
 
+    private final BookCatalogService bookCatalogService;
+
     @GetMapping
     public ResponseEntity<List<BookDTO>> getAllBooks() {
         List<BookDTO> books = bookService.getAllBooks();
         return ResponseEntity.ok(books);
+    }
+
+    // Вбудований каталог предзаготовлених книг.
+    @GetMapping("/catalog")
+    public ResponseEntity<List<CatalogBookDTO>> getCatalog() {
+        return ResponseEntity.ok(bookCatalogService.getCatalog());
+    }
+
+    // Додає книгу з каталогу до бібліотеки вчителя (ідемпотентно) і повертає її.
+    @PostMapping("/catalog/{key}")
+    public ResponseEntity<BookDTO> addFromCatalog(@PathVariable String key) throws MinioException {
+        return ResponseEntity.ok(bookCatalogService.addToLibrary(key));
     }
 
     @GetMapping("/participant/{participantId}")

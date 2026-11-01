@@ -18,6 +18,7 @@ public class BookConverter {
                 .originalFileName(entry.getOriginalFileName())
                 .fileSize(entry.getFileSize())
                 .fileType(entry.getFileType())
+                .catalogKey(entry.getCatalogKey())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
@@ -34,6 +35,7 @@ public class BookConverter {
                 .originalFileName(entry.getOriginalFileName())
                 .fileSize(entry.getFileSize())
                 .fileType(entry.getFileType())
+                .catalogKey(entry.getCatalogKey())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
@@ -50,6 +52,7 @@ public class BookConverter {
                 .originalFileName(entry.getOriginalFileName())
                 .fileSize(entry.getFileSize())
                 .fileType(entry.getFileType())
+                .catalogKey(entry.getCatalogKey())
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();

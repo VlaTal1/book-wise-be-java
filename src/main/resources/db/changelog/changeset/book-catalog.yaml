@@ -1,0 +1,16 @@
+databaseChangeLog:
+  # Книги з вбудованого каталогу (resources/catalog). У кожного вчителя свій
+  # рядок BOOK, але файл у MinIO спільний — тому зберігаємо ключ каталогу,
+  # щоб не дублювати книгу при повторному виборі й не видаляти спільний файл.
+  - changeSet:
+      id: add-catalog-key-to-book
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: BOOK
+            columns:
+              - column:
+                  name: CATALOG_KEY
+                  type: VARCHAR
+                  constraints:
+                    nullable: true

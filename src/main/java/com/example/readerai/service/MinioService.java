@@ -75,6 +75,30 @@ public class MinioService {
         }
     }
 
+    // Розмір об'єкта в бакеті або null, якщо його немає.
+    public Long fileSize(String filename) {
+        try {
+            return minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(filename).build()).size();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public void uploadStream(String filename, InputStream stream, long size, String contentType) throws MinioException {
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(filename)
+                            .stream(stream, size, -1)
+                            .contentType(contentType)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new MinioException("Error uploading file to MinIO: " + e.getMessage());
+        }
+    }
+
     public InputStream getFile(String filename) throws MinioException {
         try {
             return minioClient.getObject(

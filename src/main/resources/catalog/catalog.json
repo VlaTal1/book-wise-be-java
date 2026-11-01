@@ -1,0 +1,16 @@
+[
+  {
+    "key": "9_grade",
+    "title": "На камені",
+    "author": "Михайло Коцюбинський",
+    "grade": 9,
+    "file": "9_grade.pdf"
+  },
+  {
+    "key": "11_grade",
+    "title": "Тигролови",
+    "author": "Іван Багряний",
+    "grade": 11,
+    "file": "11_grade.pdf"
+  }
+]

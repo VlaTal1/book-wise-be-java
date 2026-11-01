@@ -158,7 +158,10 @@ public class BookService {
     public void deleteBook(Long id) throws MinioException {
         Book book = findOwnedBook(id);
 
-        minioService.deleteFile(book.getFileName());
+        // Файл каталожної книги спільний для всіх вчителів — не видаляємо.
+        if (book.getCatalogKey() == null) {
+            minioService.deleteFile(book.getFileName());
+        }
 
         bookRepository.delete(book);
     }

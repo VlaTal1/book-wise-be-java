@@ -30,4 +30,6 @@ public class BookDTO extends AuditDTO {
     private Long fileSize;
 
     private String fileType;
+
+    private String catalogKey;
 }

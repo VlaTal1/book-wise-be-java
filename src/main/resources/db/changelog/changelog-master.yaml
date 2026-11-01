@@ -31,3 +31,5 @@ databaseChangeLog:
       file: db/changelog/changeset/test-generation-status.yaml
   - include:
       file: db/changelog/changeset/reading-grade.yaml
+  - include:
+      file: db/changelog/changeset/book-catalog.yaml
