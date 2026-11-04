@@ -34,12 +34,13 @@ public final class ReadingGradeCalculator {
         double totalWeight = 0;
 
         // Темп рахуємо за правильно прочитаними словами (WCPM): швидке читання
-        // з помилками не повинно давати високий бал за швидкість.
+        // з помилками не повинно давати високий бал за швидкість. Python уже
+        // передає wpm як правильні слова за хвилину (alignment.py,
+        // compute_metrics), тому на точність тут повторно не множимо.
         int targetWpm = attempt.getTargetWpm() != null && attempt.getTargetWpm() > 0
                 ? attempt.getTargetWpm()
                 : DEFAULT_TARGET_WPM;
-        double correctWordsPerMinute = attempt.getWpm() * attempt.getAccuracy();
-        weightedSum += SPEED_WEIGHT * Math.min(1.0, correctWordsPerMinute / targetWpm);
+        weightedSum += SPEED_WEIGHT * Math.min(1.0, attempt.getWpm() / targetWpm);
         totalWeight += SPEED_WEIGHT;
 
         weightedSum += ACCURACY_WEIGHT * scale(attempt.getAccuracy(), ACCURACY_ZERO, ACCURACY_FULL);
