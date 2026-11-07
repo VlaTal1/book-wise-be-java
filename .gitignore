@@ -28,3 +28,5 @@ replay_pid*
 .idea/
 build/
 .vscode/
+# Gradle wrapper must be committed (excluded from *.jar above)
+!gradle/wrapper/gradle-wrapper.jar
