@@ -173,7 +173,7 @@ public class ReadingSpeedAttemptService {
     // Оцінку виставляємо лише остаточну — коли і наголос, і тест уже готові.
     private void updateGradeIfReady(ReadingSpeedAttempt attempt) {
         if (attempt.getGrade() == null && ReadingGradeCalculator.isReady(attempt)) {
-            attempt.setGrade(ReadingGradeCalculator.calculate(attempt));
+            ReadingGradeCalculator.apply(attempt);
         }
     }
 }

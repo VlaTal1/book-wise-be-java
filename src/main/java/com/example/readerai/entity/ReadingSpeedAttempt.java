@@ -123,10 +123,20 @@ public class ReadingSpeedAttempt extends Audit {
     @Column(name = "QUIZ_CORRECT")
     private Integer quizCorrect;
 
-    // Оцінка 1-10 (ReadingGradeCalculator) — лише остаточна: з'являється,
-    // коли готові і перевірка наголосу, і результат тесту.
+    // Оцінка 0-15 (ReadingGradeCalculator) — лише остаточна: з'являється,
+    // коли готові і перевірка наголосу, і результат тесту. Складові по 0-5:
+    // швидкість, вимова (слова + наголос), розуміння (null — тесту не було).
     @Column(name = "GRADE")
     private Integer grade;
+
+    @Column(name = "SPEED_SCORE")
+    private Integer speedScore;
+
+    @Column(name = "PRONUNCIATION_SCORE")
+    private Integer pronunciationScore;
+
+    @Column(name = "COMPREHENSION_SCORE")
+    private Integer comprehensionScore;
 
     // Фрагмент, призначений класу; null — вільне тренування (випадковий уривок).
     @ManyToOne(fetch = FetchType.LAZY)

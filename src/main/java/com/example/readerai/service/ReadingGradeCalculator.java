@@ -3,16 +3,22 @@ package com.example.readerai.service;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.entity.StressStatus;
 
-// Оцінка читання на швидкість за 10-бальною шкалою. Кожен показник
-// зводиться до 0..1 і входить зі своєю вагою; показники, яких немає (тесту не
-// було, наголос не вдалося перевірити), просто випадають, а ваги решти
-// перенормовуються.
+// Оцінка читання на швидкість: три показники по 0-5 балів (цілі), підсумок —
+// їхня сума, максимум 15.
+//   * швидкість — темп відносно норми класу;
+//   * вимова — правильність слів (70 %) і наголосу (30 %);
+//   * розуміння — частка правильних відповідей тесту після читання.
+// Якщо тесту не було, сума двох показників масштабується до 15.
+//
+// Ту саму формулу повторює changeset reading-grade-15.yaml (перерахунок
+// наявних оцінок) — змінюючи тут, зміни й там.
 public final class ReadingGradeCalculator {
 
-    static final double SPEED_WEIGHT = 0.3;
-    static final double ACCURACY_WEIGHT = 0.3;
-    static final double COMPREHENSION_WEIGHT = 0.3;
-    static final double STRESS_WEIGHT = 0.1;
+    public static final int COMPONENT_MAX = 5;
+    public static final int GRADE_MAX = 3 * COMPONENT_MAX;
+
+    static final double WORDS_WEIGHT = 0.7;
+    static final double STRESS_WEIGHT = 0.3;
 
     // Точність розпізнаних слів зазвичай 90-98%, тож шкала починається не з 0,
     // інакше всі отримували б майже максимум. Але й не з 80%: на реальних
@@ -28,13 +34,13 @@ public final class ReadingGradeCalculator {
 
     static final int DEFAULT_TARGET_WPM = 70;
 
+    public record Result(int speed, int pronunciation, Integer comprehension, int total) {
+    }
+
     private ReadingGradeCalculator() {
     }
 
-    public static int calculate(ReadingSpeedAttempt attempt) {
-        double weightedSum = 0;
-        double totalWeight = 0;
-
+    public static Result calculate(ReadingSpeedAttempt attempt) {
         // Темп рахуємо за правильно прочитаними словами (WCPM): швидке читання
         // з помилками не повинно давати високий бал за швидкість. Python уже
         // передає wpm як правильні слова за хвилину (alignment.py,
@@ -42,24 +48,32 @@ public final class ReadingGradeCalculator {
         int targetWpm = attempt.getTargetWpm() != null && attempt.getTargetWpm() > 0
                 ? attempt.getTargetWpm()
                 : DEFAULT_TARGET_WPM;
-        weightedSum += SPEED_WEIGHT * Math.min(1.0, attempt.getWpm() / targetWpm);
-        totalWeight += SPEED_WEIGHT;
+        int speed = points(Math.min(1.0, attempt.getWpm() / targetWpm));
 
-        weightedSum += ACCURACY_WEIGHT * scale(attempt.getAccuracy(), ACCURACY_ZERO, ACCURACY_FULL);
-        totalWeight += ACCURACY_WEIGHT;
+        // Наголос, який не вдалося перевірити, випадає — вимова лише за словами.
+        double words = scale(attempt.getAccuracy(), ACCURACY_ZERO, ACCURACY_FULL);
+        double pronunciation = attempt.getStressStatus() == StressStatus.DONE && attempt.getStressAccuracy() != null
+                ? WORDS_WEIGHT * words + STRESS_WEIGHT * scale(attempt.getStressAccuracy(), STRESS_ZERO, STRESS_FULL)
+                : words;
+        int pronunciationPoints = points(pronunciation);
 
+        Integer comprehension = null;
         if (attempt.getQuizTotal() != null && attempt.getQuizTotal() > 0 && attempt.getQuizCorrect() != null) {
-            weightedSum += COMPREHENSION_WEIGHT * ((double) attempt.getQuizCorrect() / attempt.getQuizTotal());
-            totalWeight += COMPREHENSION_WEIGHT;
+            comprehension = points((double) attempt.getQuizCorrect() / attempt.getQuizTotal());
         }
 
-        if (attempt.getStressStatus() == StressStatus.DONE && attempt.getStressAccuracy() != null) {
-            weightedSum += STRESS_WEIGHT * scale(attempt.getStressAccuracy(), STRESS_ZERO, STRESS_FULL);
-            totalWeight += STRESS_WEIGHT;
-        }
+        int total = comprehension != null
+                ? speed + pronunciationPoints + comprehension
+                : (int) Math.round((speed + pronunciationPoints) * GRADE_MAX / (2.0 * COMPONENT_MAX));
+        return new Result(speed, pronunciationPoints, comprehension, total);
+    }
 
-        int grade = (int) Math.round(10 * weightedSum / totalWeight);
-        return Math.max(1, Math.min(10, grade));
+    public static void apply(ReadingSpeedAttempt attempt) {
+        Result result = calculate(attempt);
+        attempt.setSpeedScore(result.speed());
+        attempt.setPronunciationScore(result.pronunciation());
+        attempt.setComprehensionScore(result.comprehension());
+        attempt.setGrade(result.total());
     }
 
     // Оцінка остаточна, коли перевірка наголосу завершилась (будь-чим) і
@@ -72,6 +86,10 @@ public final class ReadingGradeCalculator {
                 || attempt.getQuizTotal() == 0
                 || attempt.getQuizCorrect() != null;
         return stressFinished && quizFinished;
+    }
+
+    private static int points(double share) {
+        return (int) Math.round(COMPONENT_MAX * share);
     }
 
     private static double scale(double value, double zero, double full) {

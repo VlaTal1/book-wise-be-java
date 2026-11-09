@@ -39,3 +39,5 @@ databaseChangeLog:
       file: db/changelog/changeset/local-students.yaml
   - include:
       file: db/changelog/changeset/classroom-reading-random-mode.yaml
+  - include:
+      file: db/changelog/changeset/reading-grade-15.yaml

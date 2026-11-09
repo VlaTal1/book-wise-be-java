@@ -1,0 +1,53 @@
+databaseChangeLog:
+  # Нова шкала оцінки читання на швидкість: три показники по 0-5 (швидкість,
+  # вимова, розуміння), підсумок — сума, максимум 15 (ReadingGradeCalculator).
+  - changeSet:
+      id: add-grade-components-to-reading-speed-attempt
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: READING_SPEED_ATTEMPT
+            columns:
+              - column:
+                  name: SPEED_SCORE
+                  type: INTEGER
+              - column:
+                  name: PRONUNCIATION_SCORE
+                  type: INTEGER
+              - column:
+                  name: COMPREHENSION_SCORE
+                  type: INTEGER
+  # Перерахунок уже виставлених оцінок за новою формулою. Повторює
+  # ReadingGradeCalculator.calculate; округлення через numeric (як Math.round
+  # для невід'ємних чисел, а не банківське, як round(double precision)).
+  - changeSet:
+      id: recalculate-reading-grades-to-15
+      author: VlaTal
+      changes:
+        - sql:
+            sql: >
+              WITH s AS (
+                SELECT id,
+                  round((5 * least(1.0, wpm / coalesce(nullif(target_wpm, 0), 70)))::numeric)::int AS speed,
+                  round((5 * CASE
+                    WHEN stress_status = 'DONE' AND stress_accuracy IS NOT NULL THEN
+                      0.7 * greatest(0.0, least(1.0, (accuracy - 0.60) / (1.00 - 0.60)))
+                      + 0.3 * greatest(0.0, least(1.0, (stress_accuracy - 0.70) / (0.95 - 0.70)))
+                    ELSE greatest(0.0, least(1.0, (accuracy - 0.60) / (1.00 - 0.60)))
+                  END)::numeric)::int AS pronunciation,
+                  CASE WHEN quiz_total > 0 AND quiz_correct IS NOT NULL
+                    THEN round((5 * quiz_correct::double precision / quiz_total)::numeric)::int
+                  END AS comprehension
+                FROM READING_SPEED_ATTEMPT
+                WHERE GRADE IS NOT NULL
+              )
+              UPDATE READING_SPEED_ATTEMPT a
+              SET SPEED_SCORE = s.speed,
+                  PRONUNCIATION_SCORE = s.pronunciation,
+                  COMPREHENSION_SCORE = s.comprehension,
+                  GRADE = CASE WHEN s.comprehension IS NOT NULL
+                    THEN s.speed + s.pronunciation + s.comprehension
+                    ELSE round(((s.speed + s.pronunciation) * 1.5)::numeric)::int
+                  END
+              FROM s
+              WHERE a.ID = s.id
