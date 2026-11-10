@@ -28,6 +28,21 @@ public class StudentReadingResultDTO {
 
     private Double bestWpm;
 
+    // Складові оцінки найкращої спроби (по 0-5) і сирі показники, з яких
+    // вони пораховані — для картки учня в результатах.
+    private Integer bestSpeedScore;
+
+    private Integer bestPronunciationScore;
+
+    // null — у спробі не було тесту на розуміння.
+    private Integer bestComprehensionScore;
+
+    private Double bestAccuracy;
+
+    private Integer bestQuizTotal;
+
+    private Integer bestQuizCorrect;
+
     // Є спроби, оцінка яких ще рахується (наголос / тест на розуміння).
     private Boolean gradePending;
 }

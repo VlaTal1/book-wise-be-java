@@ -167,6 +167,12 @@ public class ClassroomReadingService {
                             .bestGrade(best.map(ReadingSpeedAttempt::getGrade).orElse(null))
                             .bestAttemptId(best.map(ReadingSpeedAttempt::getId).orElse(null))
                             .bestWpm(best.map(ReadingSpeedAttempt::getWpm).orElse(null))
+                            .bestSpeedScore(best.map(ReadingSpeedAttempt::getSpeedScore).orElse(null))
+                            .bestPronunciationScore(best.map(ReadingSpeedAttempt::getPronunciationScore).orElse(null))
+                            .bestComprehensionScore(best.map(ReadingSpeedAttempt::getComprehensionScore).orElse(null))
+                            .bestAccuracy(best.map(ReadingSpeedAttempt::getAccuracy).orElse(null))
+                            .bestQuizTotal(best.map(ReadingSpeedAttempt::getQuizTotal).orElse(null))
+                            .bestQuizCorrect(best.map(ReadingSpeedAttempt::getQuizCorrect).orElse(null))
                             .gradePending(attempts.stream().anyMatch(attempt -> attempt.getGrade() == null))
                             .build();
                 })
