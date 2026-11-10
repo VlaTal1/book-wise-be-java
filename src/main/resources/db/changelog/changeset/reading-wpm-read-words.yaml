@@ -1,0 +1,44 @@
+databaseChangeLog:
+  # WPM тепер = (правильні + з помилкою) / хвилини читання; пропущені й
+  # нерозпізнані не рахуються (alignment.py, compute_metrics). Раніше WPM
+  # рахувався лише за правильними словами. CORRECT_COUNT, ERROR_COUNT і
+  # DURATION_SECONDS збережені, тож старі спроби перераховуються точно.
+  - changeSet:
+      id: recalculate-wpm-from-read-words
+      author: VlaTal
+      changes:
+        - sql:
+            sql: >
+              UPDATE READING_SPEED_ATTEMPT
+              SET WPM = round(((CORRECT_COUNT + ERROR_COUNT) * 60.0
+                               / greatest(DURATION_SECONDS, 0.00006))::numeric, 1)
+  # Після зміни WPM — перерахунок балу за швидкість і підсумку
+  # (та сама формула, що в reading-speed-score-bands.yaml).
+  - changeSet:
+      id: recalculate-speed-score-after-wpm-change
+      author: VlaTal
+      changes:
+        - sql:
+            sql: >
+              WITH r AS (
+                SELECT id, pronunciation_score, comprehension_score,
+                  (wpm / coalesce(nullif(target_wpm, 0), 70))::numeric AS share
+                FROM READING_SPEED_ATTEMPT
+                WHERE GRADE IS NOT NULL AND PRONUNCIATION_SCORE IS NOT NULL
+              ), s AS (
+                SELECT id, pronunciation_score, comprehension_score,
+                  CASE
+                    WHEN share < 0.25 THEN 0
+                    WHEN share < 0.5 THEN 1
+                    ELSE 2 + floor(6 * (least(share, 1) - 0.5) + 0.000000001)::int
+                  END AS speed
+                FROM r
+              )
+              UPDATE READING_SPEED_ATTEMPT a
+              SET SPEED_SCORE = s.speed,
+                  GRADE = CASE WHEN s.comprehension_score IS NOT NULL
+                    THEN s.speed + s.pronunciation_score + s.comprehension_score
+                    ELSE round(((s.speed + s.pronunciation_score) * 1.5)::numeric)::int
+                  END
+              FROM s
+              WHERE a.ID = s.id

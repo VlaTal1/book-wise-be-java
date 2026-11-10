@@ -10,8 +10,9 @@ import com.example.readerai.entity.StressStatus;
 //   * розуміння — частка правильних відповідей тесту після читання.
 // Якщо тесту не було, сума двох показників масштабується до 15.
 //
-// Ту саму формулу повторюють changeset-и reading-grade-15.yaml і
-// reading-speed-score-bands.yaml (перерахунок наявних оцінок) — змінюючи тут,
+// Ту саму формулу повторюють changeset-и reading-grade-15.yaml,
+// reading-speed-score-bands.yaml, reading-wpm-read-words.yaml і
+// reading-wpm-with-oov.yaml (перерахунок наявних оцінок) — змінюючи тут,
 // додай новий changeset з перерахунком.
 public final class ReadingGradeCalculator {
 
@@ -49,10 +50,10 @@ public final class ReadingGradeCalculator {
     }
 
     public static Result calculate(ReadingSpeedAttempt attempt) {
-        // Темп рахуємо за правильно прочитаними словами (WCPM): швидке читання
-        // з помилками не повинно давати високий бал за швидкість. Python уже
-        // передає wpm як правильні слова за хвилину (alignment.py,
-        // compute_metrics), тому на точність тут повторно не множимо.
+        // Темп — усі слова за хвилину, крім пропущених (правильні, з помилкою
+        // і відсутні у словнику Vosk), як рахує Python (alignment.py,
+        // compute_metrics).
+        // Помилки вже знижують бал за вимову, тож тут їх не штрафуємо вдруге.
         int targetWpm = attempt.getTargetWpm() != null && attempt.getTargetWpm() > 0
                 ? attempt.getTargetWpm()
                 : DEFAULT_TARGET_WPM;

@@ -45,3 +45,7 @@ databaseChangeLog:
       file: db/changelog/changeset/classroom-reading-name.yaml
   - include:
       file: db/changelog/changeset/reading-speed-score-bands.yaml
+  - include:
+      file: db/changelog/changeset/reading-wpm-read-words.yaml
+  - include:
+      file: db/changelog/changeset/reading-wpm-with-oov.yaml
