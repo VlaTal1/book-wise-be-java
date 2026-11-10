@@ -22,6 +22,9 @@ public class ClassroomReadingDTO extends AuditDTO {
 
     private Long classroomId;
 
+    // Назва від вчителя; null — не задана.
+    private String name;
+
     private ReadingMode mode;
 
     private Long bookId;

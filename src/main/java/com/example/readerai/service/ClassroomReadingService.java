@@ -46,6 +46,7 @@ public class ClassroomReadingService {
     private static final int MAX_TIME_LIMIT_SECONDS = 60 * 60;
     private static final int MAX_ATTEMPTS = 100;
     private static final int PREVIEW_LENGTH = 120;
+    private static final int MAX_NAME_LENGTH = 100;
 
     private final ClassroomReadingRepository classroomReadingRepository;
 
@@ -80,11 +81,13 @@ public class ClassroomReadingService {
         }
         Book book = findClassroomBook(classroomId, request.getBookId());
         validateLimits(request.getTimeLimitSeconds(), request.getMaxAttempts());
+        String name = normalizeName(request.getName());
 
         if (request.getMode() == ReadingMode.RANDOM) {
             return toTeacherDTO(classroomReadingRepository.save(ClassroomReading.builder()
                     .classroom(classroom)
                     .book(book)
+                    .name(name)
                     .mode(ReadingMode.RANDOM)
                     .timeLimitSeconds(request.getTimeLimitSeconds())
                     .maxAttempts(request.getMaxAttempts())
@@ -112,6 +115,7 @@ public class ClassroomReadingService {
         ClassroomReading reading = classroomReadingRepository.save(ClassroomReading.builder()
                 .classroom(classroom)
                 .book(book)
+                .name(name)
                 .mode(ReadingMode.FIXED)
                 .startPage(request.getStartPage())
                 .endPage(request.getEndPage())
@@ -259,6 +263,7 @@ public class ClassroomReadingService {
         String text = reading.getText() == null ? null : reading.getText().replace('\n', ' ');
         return ClassroomReadingDTO.builder()
                 .id(reading.getId())
+                .name(reading.getName())
                 .mode(reading.getMode())
                 .classroomId(reading.getClassroom().getId())
                 .bookId(reading.getBook().getId())
@@ -272,6 +277,18 @@ public class ClassroomReadingService {
                 .createdAt(reading.getCreatedAt())
                 .updatedAt(reading.getUpdatedAt())
                 .build();
+    }
+
+    // Порожня назва — як не задана.
+    private static String normalizeName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        String trimmed = name.trim();
+        if (trimmed.length() > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException("Reading name is too long (max " + MAX_NAME_LENGTH + " characters)");
+        }
+        return trimmed;
     }
 
     private Classroom findOwnedClassroom(Long classroomId) {

@@ -1,0 +1,13 @@
+databaseChangeLog:
+  # Назва завдання читання на швидкість, яку задає вчитель (необов'язкова —
+  # без неї в застосунку показується назва книги).
+  - changeSet:
+      id: add-name-to-classroom-reading
+      author: VlaTal
+      changes:
+        - addColumn:
+            tableName: CLASSROOM_READING
+            columns:
+              - column:
+                  name: NAME
+                  type: VARCHAR(100)

@@ -32,6 +32,10 @@ public class ClassroomReading extends Audit {
     @JoinColumn(name = "BOOK_ID", nullable = false, referencedColumnName = "ID", foreignKey = @ForeignKey(name = "FK_CLASSROOM_READING_BOOK"))
     private Book book;
 
+    // Назва від вчителя; null — у застосунку показується назва книги.
+    @Column(name = "NAME", length = 100)
+    private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "MODE", nullable = false, length = 20)
     @Builder.Default

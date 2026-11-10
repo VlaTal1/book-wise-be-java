@@ -16,6 +16,9 @@ public class ClassroomReadingRequest {
     // RANDOM — випадкові уривки з книги, сторінки й абзаци не потрібні.
     private ReadingMode mode;
 
+    // Необов'язкова назва завдання (до 100 символів).
+    private String name;
+
     private Long bookId;
 
     private Integer startPage;

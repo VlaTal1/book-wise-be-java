@@ -81,4 +81,7 @@ public class ReadingSpeedAttemptDTO extends AuditDTO {
 
     // Фрагмент, призначений класу (надсилає Python); null — вільне тренування.
     private Long classroomReadingId;
+
+    // Назва завдання для історії: задана вчителем або назва книги; null — вільне тренування.
+    private String classroomReadingTitle;
 }

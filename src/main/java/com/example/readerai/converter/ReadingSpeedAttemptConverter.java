@@ -1,6 +1,7 @@
 package com.example.readerai.converter;
 
 import com.example.readerai.dto.ReadingSpeedAttemptDTO;
+import com.example.readerai.entity.ClassroomReading;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import org.springframework.stereotype.Component;
 
@@ -60,8 +61,16 @@ public class ReadingSpeedAttemptConverter {
                 .pronunciationScore(entry.getPronunciationScore())
                 .comprehensionScore(entry.getComprehensionScore())
                 .classroomReadingId(entry.getClassroomReading() == null ? null : entry.getClassroomReading().getId())
+                .classroomReadingTitle(classroomReadingTitle(entry.getClassroomReading()))
                 .createdAt(entry.getCreatedAt())
                 .updatedAt(entry.getUpdatedAt())
                 .build();
+    }
+
+    private static String classroomReadingTitle(ClassroomReading reading) {
+        if (reading == null) {
+            return null;
+        }
+        return reading.getName() != null ? reading.getName() : reading.getBook().getTitle();
     }
 }
