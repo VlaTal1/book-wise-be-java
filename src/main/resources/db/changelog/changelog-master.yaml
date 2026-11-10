@@ -43,3 +43,5 @@ databaseChangeLog:
       file: db/changelog/changeset/reading-grade-15.yaml
   - include:
       file: db/changelog/changeset/classroom-reading-name.yaml
+  - include:
+      file: db/changelog/changeset/reading-speed-score-bands.yaml

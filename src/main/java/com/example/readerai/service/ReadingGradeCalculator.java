@@ -5,13 +5,14 @@ import com.example.readerai.entity.StressStatus;
 
 // Оцінка читання на швидкість: три показники по 0-5 балів (цілі), підсумок —
 // їхня сума, максимум 15.
-//   * швидкість — темп відносно норми класу;
+//   * швидкість — темп відносно норми класу (див. speedPoints);
 //   * вимова — правильність слів (70 %) і наголосу (30 %);
 //   * розуміння — частка правильних відповідей тесту після читання.
 // Якщо тесту не було, сума двох показників масштабується до 15.
 //
-// Ту саму формулу повторює changeset reading-grade-15.yaml (перерахунок
-// наявних оцінок) — змінюючи тут, зміни й там.
+// Ту саму формулу повторюють changeset-и reading-grade-15.yaml і
+// reading-speed-score-bands.yaml (перерахунок наявних оцінок) — змінюючи тут,
+// додай новий changeset з перерахунком.
 public final class ReadingGradeCalculator {
 
     public static final int COMPONENT_MAX = 5;
@@ -34,6 +35,13 @@ public final class ReadingGradeCalculator {
 
     static final int DEFAULT_TARGET_WPM = 70;
 
+    // Темп нижче чверті норми — 0 балів, нижче половини — 1 бал. Від половини
+    // до норми — 2-4 бали трьома рівними смугами, 5 балів — за норму і вище.
+    static final double SPEED_ZERO_BELOW = 0.25;
+    static final double SPEED_ONE_BELOW = 0.50;
+    // Захист від похибки double на межах смуг (100/150 має дати рівно 3).
+    private static final double EPS = 1e-9;
+
     public record Result(int speed, int pronunciation, Integer comprehension, int total) {
     }
 
@@ -48,7 +56,7 @@ public final class ReadingGradeCalculator {
         int targetWpm = attempt.getTargetWpm() != null && attempt.getTargetWpm() > 0
                 ? attempt.getTargetWpm()
                 : DEFAULT_TARGET_WPM;
-        int speed = points(Math.min(1.0, attempt.getWpm() / targetWpm));
+        int speed = speedPoints(attempt.getWpm() / targetWpm);
 
         // Наголос, який не вдалося перевірити, випадає — вимова лише за словами.
         double words = scale(attempt.getAccuracy(), ACCURACY_ZERO, ACCURACY_FULL);
@@ -86,6 +94,19 @@ public final class ReadingGradeCalculator {
                 || attempt.getQuizTotal() == 0
                 || attempt.getQuizCorrect() != null;
         return stressFinished && quizFinished;
+    }
+
+    //        ⎧ 0,                          r < 0.25
+    //   S =  ⎨ 1,                          0.25 ≤ r < 0.5
+    //        ⎩ 2 + ⌊6 · (min(r, 1) − 0.5)⌋, r ≥ 0.5
+    static int speedPoints(double share) {
+        if (share < SPEED_ZERO_BELOW) {
+            return 0;
+        }
+        if (share < SPEED_ONE_BELOW) {
+            return 1;
+        }
+        return 2 + (int) Math.floor(6 * (Math.min(share, 1.0) - SPEED_ONE_BELOW) + EPS);
     }
 
     private static int points(double share) {

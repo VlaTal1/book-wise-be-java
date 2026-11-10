@@ -1,0 +1,33 @@
+databaseChangeLog:
+  # Нова шкала балу за швидкість (ReadingGradeCalculator.speedPoints):
+  # r = wpm / норма; r < 0.25 -> 0, r < 0.5 -> 1, далі 2 + floor(6 * (min(r, 1) - 0.5)).
+  # Перераховуємо SPEED_SCORE і підсумкову GRADE для вже оцінених спроб;
+  # вимова й розуміння не змінюються.
+  - changeSet:
+      id: recalculate-speed-score-bands
+      author: VlaTal
+      changes:
+        - sql:
+            sql: >
+              WITH r AS (
+                SELECT id, pronunciation_score, comprehension_score,
+                  (wpm / coalesce(nullif(target_wpm, 0), 70))::numeric AS share
+                FROM READING_SPEED_ATTEMPT
+                WHERE GRADE IS NOT NULL AND PRONUNCIATION_SCORE IS NOT NULL
+              ), s AS (
+                SELECT id, pronunciation_score, comprehension_score,
+                  CASE
+                    WHEN share < 0.25 THEN 0
+                    WHEN share < 0.5 THEN 1
+                    ELSE 2 + floor(6 * (least(share, 1) - 0.5) + 0.000000001)::int
+                  END AS speed
+                FROM r
+              )
+              UPDATE READING_SPEED_ATTEMPT a
+              SET SPEED_SCORE = s.speed,
+                  GRADE = CASE WHEN s.comprehension_score IS NOT NULL
+                    THEN s.speed + s.pronunciation_score + s.comprehension_score
+                    ELSE round(((s.speed + s.pronunciation_score) * 1.5)::numeric)::int
+                  END
+              FROM s
+              WHERE a.ID = s.id
