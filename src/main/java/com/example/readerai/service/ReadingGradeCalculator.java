@@ -3,20 +3,18 @@ package com.example.readerai.service;
 import com.example.readerai.entity.ReadingSpeedAttempt;
 import com.example.readerai.entity.StressStatus;
 
-// Оцінка читання на швидкість: три показники по 0-5 балів (цілі), підсумок —
-// їхня сума, максимум 15.
+// Оцінка читання на швидкість: три показники по 0-4 бали (цілі), підсумок —
+// їхня сума, максимум 12.
 //   * швидкість — темп відносно норми класу (див. speedPoints);
 //   * вимова — правильність слів (70 %) і наголосу (30 %);
 //   * розуміння — частка правильних відповідей тесту після читання.
-// Якщо тесту не було, сума двох показників масштабується до 15.
+// Якщо тесту не було, сума двох показників масштабується до 12.
 //
-// Ту саму формулу повторюють changeset-и reading-grade-15.yaml,
-// reading-speed-score-bands.yaml, reading-wpm-read-words.yaml і
-// reading-wpm-with-oov.yaml (перерахунок наявних оцінок) — змінюючи тут,
-// додай новий changeset з перерахунком.
+// Ту саму формулу повторює changeset reading-grade-12.yaml (перерахунок
+// наявних оцінок) — змінюючи тут, додай новий changeset з перерахунком.
 public final class ReadingGradeCalculator {
 
-    public static final int COMPONENT_MAX = 5;
+    public static final int COMPONENT_MAX = 4;
     public static final int GRADE_MAX = 3 * COMPONENT_MAX;
 
     static final double WORDS_WEIGHT = 0.7;
@@ -36,11 +34,7 @@ public final class ReadingGradeCalculator {
 
     static final int DEFAULT_TARGET_WPM = 70;
 
-    // Темп нижче чверті норми — 0 балів, нижче половини — 1 бал. Від половини
-    // до норми — 2-4 бали трьома рівними смугами, 5 балів — за норму і вище.
-    static final double SPEED_ZERO_BELOW = 0.25;
-    static final double SPEED_ONE_BELOW = 0.50;
-    // Захист від похибки double на межах смуг (100/150 має дати рівно 3).
+    // Захист від похибки double на межах смуг (75/150 має дати рівно 2).
     private static final double EPS = 1e-9;
 
     public record Result(int speed, int pronunciation, Integer comprehension, int total) {
@@ -97,17 +91,11 @@ public final class ReadingGradeCalculator {
         return stressFinished && quizFinished;
     }
 
-    //        ⎧ 0,                          r < 0.25
-    //   S =  ⎨ 1,                          0.25 ≤ r < 0.5
-    //        ⎩ 2 + ⌊6 · (min(r, 1) − 0.5)⌋, r ≥ 0.5
+    // Бал за темп — повні чверті норми: S = ⌊4 · min(r, 1)⌋, r = wpm / норма.
+    // Нижче чверті норми — 0, нижче половини — 1, нижче трьох чвертей — 2,
+    // нижче норми — 3, норма і вище — 4.
     static int speedPoints(double share) {
-        if (share < SPEED_ZERO_BELOW) {
-            return 0;
-        }
-        if (share < SPEED_ONE_BELOW) {
-            return 1;
-        }
-        return 2 + (int) Math.floor(6 * (Math.min(share, 1.0) - SPEED_ONE_BELOW) + EPS);
+        return (int) Math.floor(COMPONENT_MAX * Math.min(Math.max(share, 0), 1.0) + EPS);
     }
 
     private static int points(double share) {

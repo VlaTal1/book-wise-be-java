@@ -123,7 +123,7 @@ public class ReadingSpeedAttempt extends Audit {
     @Column(name = "QUIZ_CORRECT")
     private Integer quizCorrect;
 
-    // Оцінка 0-15 (ReadingGradeCalculator) — лише остаточна: з'являється,
+    // Оцінка 0-12 (ReadingGradeCalculator) — лише остаточна: з'являється,
     // коли готові і перевірка наголосу, і результат тесту. Складові по 0-5:
     // швидкість, вимова (слова + наголос), розуміння (null — тесту не було).
     @Column(name = "GRADE")

@@ -49,3 +49,5 @@ databaseChangeLog:
       file: db/changelog/changeset/reading-wpm-read-words.yaml
   - include:
       file: db/changelog/changeset/reading-wpm-with-oov.yaml
+  - include:
+      file: db/changelog/changeset/reading-grade-12.yaml

@@ -24,41 +24,41 @@ class ReadingGradeCalculatorTest {
     }
 
     @Test
-    void perfectReadingGetsFifteen() {
+    void perfectReadingGetsTwelve() {
         var result = ReadingGradeCalculator.calculate(attempt(130, 120, 1.0, StressStatus.DONE, 0.95, 3, 3));
-        assertEquals(5, result.speed());
-        assertEquals(5, result.pronunciation());
-        assertEquals(5, result.comprehension());
-        assertEquals(15, result.total());
+        assertEquals(4, result.speed());
+        assertEquals(4, result.pronunciation());
+        assertEquals(4, result.comprehension());
+        assertEquals(12, result.total());
     }
 
     @Test
     void componentsAreSummed() {
         // темп 60/120 = 0.5 -> 2; слова 90% -> 0.75, наголос 85% -> 0.6:
-        // 0.7*0.75 + 0.3*0.6 = 0.705 -> 3.5 -> 4; тест 1/3 -> 1.67 -> 2
+        // 0.7*0.75 + 0.3*0.6 = 0.705 -> 2.82 -> 3; тест 1/3 -> 1.33 -> 1
         var result = ReadingGradeCalculator.calculate(attempt(60, 120, 0.90, StressStatus.DONE, 0.85, 3, 1));
         assertEquals(2, result.speed());
-        assertEquals(4, result.pronunciation());
-        assertEquals(2, result.comprehension());
-        assertEquals(8, result.total());
+        assertEquals(3, result.pronunciation());
+        assertEquals(1, result.comprehension());
+        assertEquals(6, result.total());
     }
 
     @Test
     void failedStressCheckUsesWordsOnly() {
-        // слова 80% -> 0.5 -> 2.5 -> 3
+        // слова 80% -> 0.5 -> 2
         var result = ReadingGradeCalculator.calculate(attempt(120, 120, 0.80, StressStatus.FAILED, null, 3, 3));
-        assertEquals(3, result.pronunciation());
-        assertEquals(13, result.total());
+        assertEquals(2, result.pronunciation());
+        assertEquals(10, result.total());
     }
 
     @Test
-    void withoutQuizSumIsScaledToFifteen() {
-        // (5 + 4) * 1.5 = 13.5 -> 14
+    void withoutQuizSumIsScaledToTwelve() {
+        // слова 92% -> 0.8, наголос 90% -> 0.8 -> 3.2 -> 3; (4 + 3) * 1.5 = 10.5 -> 11
         var result = ReadingGradeCalculator.calculate(attempt(120, 120, 0.92, StressStatus.DONE, 0.90, 0, null));
         assertNull(result.comprehension());
-        assertEquals(5, result.speed());
-        assertEquals(4, result.pronunciation());
-        assertEquals(14, result.total());
+        assertEquals(4, result.speed());
+        assertEquals(3, result.pronunciation());
+        assertEquals(11, result.total());
     }
 
     @Test
@@ -69,11 +69,11 @@ class ReadingGradeCalculatorTest {
 
     @Test
     void speedBands() {
-        // норма 150: <37.5 -> 0, <75 -> 1, 75-99 -> 2, 100-124 -> 3, 125-149 -> 4, >=150 -> 5
+        // норма 150: <37.5 -> 0, <75 -> 1, <112.5 -> 2, <150 -> 3, >=150 -> 4
         int[][] cases = {
                 {0, 0}, {37, 0}, {38, 1}, {50, 1}, {74, 1},
-                {75, 2}, {77, 2}, {99, 2}, {100, 3}, {101, 3}, {110, 3},
-                {124, 3}, {125, 4}, {149, 4}, {150, 5}, {200, 5},
+                {75, 2}, {77, 2}, {101, 2}, {110, 2}, {112, 2},
+                {113, 3}, {149, 3}, {150, 4}, {200, 4},
         };
         for (int[] c : cases) {
             var result = ReadingGradeCalculator.calculate(attempt(c[0], 150, 1.0, StressStatus.DONE, 0.95, 3, 3));
@@ -86,10 +86,9 @@ class ReadingGradeCalculatorTest {
         assertEquals(0, ReadingGradeCalculator.speedPoints(0.2499));
         assertEquals(1, ReadingGradeCalculator.speedPoints(0.25));
         assertEquals(2, ReadingGradeCalculator.speedPoints(0.5));
-        assertEquals(3, ReadingGradeCalculator.speedPoints(2.0 / 3));
-        assertEquals(4, ReadingGradeCalculator.speedPoints(5.0 / 6));
-        assertEquals(5, ReadingGradeCalculator.speedPoints(1.0));
-        // норма 70: 35/70 = 0.5, 70*2/3 не ціле, 70/70 = 1
-        assertEquals(4, ReadingGradeCalculator.speedPoints(69.0 / 70));
+        assertEquals(3, ReadingGradeCalculator.speedPoints(0.75));
+        assertEquals(3, ReadingGradeCalculator.speedPoints(69.0 / 70));
+        assertEquals(4, ReadingGradeCalculator.speedPoints(1.0));
+        assertEquals(4, ReadingGradeCalculator.speedPoints(1.7));
     }
 }

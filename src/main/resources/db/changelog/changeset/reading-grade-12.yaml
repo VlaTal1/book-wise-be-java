@@ -1,0 +1,38 @@
+databaseChangeLog:
+  # 12-бальна шкала: три показники по 0-4 (швидкість, вимова, розуміння),
+  # підсумок — сума, максимум 12 (ReadingGradeCalculator). Старі оцінки
+  # перераховуються з сирих даних спроби (WPM, точність, наголос, тест), а не
+  # пропорційно з 15, — так результат збігається з тим, що дав би калькулятор.
+  # Округлення через numeric (як Math.round для невід'ємних чисел).
+  - changeSet:
+      id: recalculate-reading-grades-to-12
+      author: VlaTal
+      changes:
+        - sql:
+            sql: >
+              WITH s AS (
+                SELECT id,
+                  floor(4 * greatest(0.0, least(1.0, wpm / coalesce(nullif(target_wpm, 0), 70)))
+                        + 0.000000001)::int AS speed,
+                  round((4 * CASE
+                    WHEN stress_status = 'DONE' AND stress_accuracy IS NOT NULL THEN
+                      0.7 * greatest(0.0, least(1.0, (accuracy - 0.60) / (1.00 - 0.60)))
+                      + 0.3 * greatest(0.0, least(1.0, (stress_accuracy - 0.70) / (0.95 - 0.70)))
+                    ELSE greatest(0.0, least(1.0, (accuracy - 0.60) / (1.00 - 0.60)))
+                  END)::numeric)::int AS pronunciation,
+                  CASE WHEN quiz_total > 0 AND quiz_correct IS NOT NULL
+                    THEN round((4 * quiz_correct::double precision / quiz_total)::numeric)::int
+                  END AS comprehension
+                FROM READING_SPEED_ATTEMPT
+                WHERE GRADE IS NOT NULL
+              )
+              UPDATE READING_SPEED_ATTEMPT a
+              SET SPEED_SCORE = s.speed,
+                  PRONUNCIATION_SCORE = s.pronunciation,
+                  COMPREHENSION_SCORE = s.comprehension,
+                  GRADE = CASE WHEN s.comprehension IS NOT NULL
+                    THEN s.speed + s.pronunciation + s.comprehension
+                    ELSE round(((s.speed + s.pronunciation) * 1.5)::numeric)::int
+                  END
+              FROM s
+              WHERE a.ID = s.id
